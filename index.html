@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Technotainment | Strmit Demo Walkthrough</title>
+  <meta name="description" content="A branded Technotainment walkthrough showing Strmit as the creator economy operating layer for content, commerce, access, analytics, and operator control." />
+  <meta property="og:title" content="Technotainment | Strmit Demo Walkthrough" />
+  <meta property="og:description" content="A branded walkthrough of Strmit: premium creator media, direct audience monetization, and operational controls for paid creator pilots." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05060a;
+      --bg2: #090b12;
+      --panel: rgba(255,255,255,.055);
+      --panel-strong: rgba(255,255,255,.09);
+      --text: #f6f7fb;
+      --muted: #a1a7b7;
+      --dim: #72798b;
+      --line: rgba(255,255,255,.13);
+      --line2: rgba(255,255,255,.08);
+      --blue: #39a7ff;
+      --violet: #8b5cf6;
+      --cyan: #49f2ff;
+      --green: #45e6a2;
+      --amber: #ffcc66;
+      --red: #ff6b7a;
+      --shadow: 0 24px 90px rgba(0,0,0,.55);
+      --radius: 28px;
+      --radius-sm: 16px;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% -10%, rgba(57,167,255,.22), transparent 32rem),
+        radial-gradient(circle at 86% 6%, rgba(139,92,246,.24), transparent 34rem),
+        linear-gradient(180deg, #05060a 0%, #070912 48%, #05060a 100%);
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    .shell { width: min(1180px, calc(100% - 36px)); margin: 0 auto; }
+    header {
+      position: sticky; top: 0; z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(5,6,10,.72);
+      border-bottom: 1px solid var(--line2);
+    }
+    .nav { height: 74px; display:flex; align-items:center; justify-content:space-between; gap: 18px; }
+    .brand { display:flex; align-items:center; gap: 14px; min-width: 0; }
+    .brand img.logo { width: 212px; max-width: 48vw; height: auto; display:block; }
+    .navlinks { display:flex; align-items:center; gap: 18px; color: var(--muted); font-size: 14px; }
+    .navlinks a { transition: color .2s ease; }
+    .navlinks a:hover { color: var(--text); }
+    .pill {
+      display:inline-flex; align-items:center; gap: 8px;
+      border: 1px solid var(--line); background: rgba(255,255,255,.06);
+      color: var(--text); padding: 10px 14px; border-radius: 999px;
+      font-size: 13px; font-weight: 600; white-space: nowrap;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 18px rgba(69,230,162,.7); }
+    .hero { padding: 78px 0 46px; position:relative; overflow:hidden; }
+    .hero-grid { display:grid; grid-template-columns: 1.02fr .98fr; gap: 34px; align-items:center; }
+    .eyebrow { color: var(--cyan); font-family: "Geist Mono", monospace; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; margin-bottom: 18px; }
+    h1 { margin: 0; font-size: clamp(44px, 7vw, 84px); line-height: .94; letter-spacing: -.065em; text-wrap: balance; }
+    .lede { margin: 24px 0 0; color: #c9ceda; font-size: clamp(18px, 2vw, 22px); line-height: 1.48; max-width: 720px; }
+    .actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap: 10px; padding: 14px 18px; border-radius: 999px; font-weight: 700; border: 1px solid var(--line); transition: transform .2s ease, border-color .2s ease, background .2s ease; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn.primary { background: linear-gradient(135deg, var(--blue), var(--violet)); border-color: transparent; color: white; box-shadow: 0 16px 50px rgba(57,167,255,.25); }
+    .btn.secondary { background: rgba(255,255,255,.06); }
+    .hero-card { border:1px solid var(--line); background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.045)); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; position:relative; }
+    .hero-card::before { content:""; position:absolute; inset:-1px; background: radial-gradient(circle at 35% 0%, rgba(73,242,255,.18), transparent 42%), radial-gradient(circle at 80% 20%, rgba(139,92,246,.24), transparent 38%); pointer-events:none; }
+    .mock-top { height: 50px; border-bottom:1px solid var(--line2); display:flex; align-items:center; gap: 8px; padding: 0 18px; position:relative; }
+    .traffic { width: 10px; height: 10px; border-radius:50%; background:#ff5f57; box-shadow: 18px 0 #ffbd2e, 36px 0 #28c840; opacity:.9; }
+    .mock-body { position:relative; padding: 20px; display:grid; gap: 16px; }
+    .player { height: 270px; border-radius: 22px; overflow:hidden; background: linear-gradient(135deg, rgba(57,167,255,.18), rgba(139,92,246,.12)), radial-gradient(circle at 70% 20%, rgba(255,255,255,.16), transparent 28%), #090b13; border:1px solid var(--line); position:relative; }
+    .player::after { content:"STRMIT LIVE • DIRECT-TO-AUDIENCE"; position:absolute; left:18px; top:18px; font-family:"Geist Mono", monospace; font-size: 12px; color: rgba(255,255,255,.8); letter-spacing:.08em; }
+    .play { position:absolute; inset:0; margin:auto; width:74px; height:74px; border-radius:50%; background: rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); display:grid; place-items:center; backdrop-filter: blur(10px); }
+    .play:before { content:""; width:0; height:0; border-top:13px solid transparent; border-bottom:13px solid transparent; border-left:20px solid white; margin-left:5px; }
+    .offer-row { display:grid; grid-template-columns: 1fr auto; gap: 12px; align-items:center; }
+    .offer-title { font-weight:800; font-size: 18px; }
+    .offer-meta { color: var(--muted); font-size: 13px; margin-top:4px; }
+    .price { font-size: 28px; font-weight: 800; letter-spacing:-.04em; }
+    .mini-grid { display:grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .mini { padding: 13px; border:1px solid var(--line2); background: rgba(0,0,0,.18); border-radius: 16px; }
+    .mini b { display:block; font-size: 15px; margin-bottom: 4px; }
+    .mini span { color: var(--muted); font-size: 12px; }
+    section { padding: 62px 0; }
+    .section-head { display:flex; justify-content:space-between; align-items:end; gap: 24px; margin-bottom: 24px; }
+    h2 { margin:0; font-size: clamp(32px, 4vw, 54px); line-height:1; letter-spacing:-.055em; max-width: 800px; text-wrap: balance; }
+    .section-copy { color: var(--muted); line-height:1.6; max-width: 520px; margin:0; }
+    .cards { display:grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .card { border:1px solid var(--line); background: rgba(255,255,255,.055); border-radius: 22px; padding: 22px; min-height: 210px; box-shadow: 0 12px 40px rgba(0,0,0,.18); }
+    .card .num { font-family:"Geist Mono", monospace; color: var(--cyan); font-size: 12px; margin-bottom: 22px; display:block; }
+    .card h3 { margin:0 0 10px; font-size: 21px; letter-spacing:-.025em; }
+    .card p { margin:0; color: var(--muted); line-height:1.55; }
+    .walkthrough { display:grid; gap: 18px; }
+    .step { display:grid; grid-template-columns: 190px 1fr 310px; gap: 18px; align-items:stretch; border:1px solid var(--line); border-radius: 24px; background: rgba(255,255,255,.045); overflow:hidden; }
+    .step-kicker { padding: 22px; border-right:1px solid var(--line2); font-family:"Geist Mono", monospace; color: var(--cyan); font-size: 12px; letter-spacing:.12em; text-transform:uppercase; }
+    .step-main { padding: 22px 8px; }
+    .step-main h3 { margin:0 0 9px; font-size: 24px; letter-spacing:-.035em; }
+    .step-main p { margin:0; color: var(--muted); line-height:1.52; }
+    .step-proof { margin: 14px 18px 14px 0; padding: 16px; border-radius: 18px; border:1px solid var(--line2); background: rgba(0,0,0,.25); }
+    .tag { display:inline-flex; padding: 6px 9px; border-radius: 999px; font-size: 12px; font-weight:700; border:1px solid var(--line); margin: 3px; color:#dfe5f2; }
+    .tag.green { color: var(--green); } .tag.amber { color: var(--amber); } .tag.blue { color: var(--cyan); }
+    .demo-screen { display:grid; grid-template-columns: .95fr 1.05fr; gap: 18px; align-items:center; border:1px solid var(--line); background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035)); border-radius: var(--radius); padding: 22px; overflow:hidden; }
+    .dashboard { border:1px solid var(--line); border-radius: 22px; overflow:hidden; background:#080a11; box-shadow: var(--shadow); }
+    .dash-head { height: 52px; border-bottom:1px solid var(--line2); display:flex; align-items:center; justify-content:space-between; padding:0 16px; }
+    .dash-title { font-weight: 800; letter-spacing:-.03em; }
+    .dash-body { display:grid; grid-template-columns: 160px 1fr; min-height: 390px; }
+    .side { border-right:1px solid var(--line2); padding: 14px; color: var(--muted); font-size: 13px; }
+    .side div { padding: 10px 8px; border-radius: 10px; } .side .active { background:rgba(57,167,255,.12); color:var(--text); }
+    .main { padding: 16px; display:grid; gap: 12px; }
+    .metric-row { display:grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .metric { border:1px solid var(--line2); border-radius: 14px; padding: 12px; background:rgba(255,255,255,.04); }
+    .metric span { color:var(--muted); font-size: 11px; display:block; } .metric b { font-size: 20px; margin-top: 5px; display:block; }
+    table { width:100%; border-collapse: collapse; font-size: 12px; color:#dbe2ef; }
+    th, td { text-align:left; padding: 10px 8px; border-bottom:1px solid var(--line2); }
+    th { color: var(--muted); font-weight:600; }
+    .copy-block h3 { margin:0 0 16px; font-size: 36px; line-height:1; letter-spacing:-.05em; }
+    .copy-block p { color: var(--muted); line-height:1.6; margin:0 0 16px; }
+    .proof-list { display:grid; gap: 10px; margin-top: 20px; }
+    .proof-item { display:flex; gap: 10px; align-items:flex-start; color:#cdd3df; }
+    .check { color: var(--green); font-weight:800; }
+    .cta { text-align:center; padding: 72px 22px; border:1px solid var(--line); border-radius: var(--radius); background: radial-gradient(circle at 50% 0%, rgba(57,167,255,.2), transparent 40%), rgba(255,255,255,.055); }
+    .cta img { width: 250px; max-width:80%; margin-bottom: 24px; }
+    .cta h2 { margin:0 auto 18px; }
+    .cta p { margin:0 auto 28px; max-width: 660px; color: var(--muted); line-height:1.6; }
+    footer { color: var(--dim); border-top:1px solid var(--line2); padding: 28px 0 40px; font-size: 13px; }
+    @media (max-width: 920px) {
+      .hero-grid, .demo-screen { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: 1fr; }
+      .step { grid-template-columns: 1fr; }
+      .step-kicker { border-right:0; border-bottom:1px solid var(--line2); }
+      .step-main { padding: 20px 22px; }
+      .step-proof { margin: 0 18px 18px; }
+      .navlinks a { display:none; }
+      .dash-body { grid-template-columns: 1fr; }
+      .side { display:none; }
+    }
+    @media (max-width: 560px) { .mini-grid, .metric-row { grid-template-columns: 1fr; } .brand img.logo{ width: 180px;} .hero{padding-top:48px;} }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell nav">
+      <a class="brand" href="#top" aria-label="Technotainment home"><img class="logo" src="assets/technotainment-logo.svg" alt="Technotainment" /></a>
+      <nav class="navlinks" aria-label="Demo navigation">
+        <a href="#thesis">Thesis</a>
+        <a href="#walkthrough">Walkthrough</a>
+        <a href="#control-plane">Control plane</a>
+        <a class="pill" href="#book"><span class="dot"></span> Demo-ready</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="shell hero-grid">
+        <div>
+          <div class="eyebrow">Technotainment presents Strmit</div>
+          <h1>The operating layer for creator-led media businesses.</h1>
+          <p class="lede">A branded walkthrough of how Strmit brings premium video, paid access, creator commerce, audience ownership, and operator-grade controls into one direct-to-audience platform.</p>
+          <div class="actions">
+            <a class="btn primary" href="#walkthrough">Start walkthrough →</a>
+            <a class="btn secondary" href="#control-plane">See operator layer</a>
+          </div>
+        </div>
+        <div class="hero-card" aria-label="Product preview mockup">
+          <div class="mock-top"><span class="traffic"></span></div>
+          <div class="mock-body">
+            <div class="player"><div class="play"></div></div>
+            <div class="offer-row">
+              <div><div class="offer-title">Creator Premiere Pass</div><div class="offer-meta">Live event, replay access, private community drop</div></div>
+              <div class="price">$29</div>
+            </div>
+            <div class="mini-grid">
+              <div class="mini"><b>Access</b><span>Entitlement verified</span></div>
+              <div class="mini"><b>Creator</b><span>Owns audience relationship</span></div>
+              <div class="mini"><b>Ledger</b><span>Operator audit trail</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="thesis">
+      <div class="shell">
+        <div class="section-head">
+          <h2>Creators already run businesses. Their infrastructure hasn’t caught up.</h2>
+          <p class="section-copy">Today’s creator stack is split across video, memberships, community, commerce, analytics, support, and payments. Strmit consolidates the paid creator loop without forcing creators into a generic marketplace or crypto-style wallet experience.</p>
+        </div>
+        <div class="cards">
+          <article class="card"><span class="num">01 / FRAGMENTATION</span><h3>One audience, too many systems</h3><p>Creators rely on reach platforms, membership tools, Discord, Shopify, course platforms, and streaming tools that don’t share identity, access, or monetization state.</p></article>
+          <article class="card"><span class="num">02 / DIRECT MONETIZATION</span><h3>Content and commerce in the same moment</h3><p>Paid video, live drops, subscriptions, digital goods, offers, and support are placed directly inside the audience experience instead of being scattered across links.</p></article>
+          <article class="card"><span class="num">03 / OPERATOR TRUST</span><h3>Admin UX is product UX</h3><p>The pilot needs more than a shiny viewer surface: approvals, entitlements, failed payment diagnosis, ledger records, payout export, and audit controls are first-class.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="walkthrough">
+      <div class="shell">
+        <div class="section-head">
+          <h2>The demo path: from discovery to paid access.</h2>
+          <p class="section-copy">This walkthrough shows the story to prospects, partners, and creator operators without exposing sensitive internal planning docs.</p>
+        </div>
+        <div class="walkthrough">
+          <article class="step"><div class="step-kicker">Audience</div><div class="step-main"><h3>Discover a creator-led destination</h3><p>Visitors land in a premium media surface that makes the creator, offer, and value obvious before checkout. The experience feels cinematic, not like a generic storefront.</p></div><div class="step-proof"><span class="tag blue">Creator profile</span><span class="tag blue">Offer detail</span><span class="tag amber">Demo data</span></div></article>
+          <article class="step"><div class="step-kicker">Checkout</div><div class="step-main"><h3>Buy access with clear money language</h3><p>The purchase path separates checkout completion from entitlement confirmation, reducing the classic “I paid but can’t watch” support failure.</p></div><div class="step-proof"><span class="tag green">Payment received</span><span class="tag blue">Entitlement granted</span><span class="tag amber">Access pending state</span></div></article>
+          <article class="step"><div class="step-kicker">Experience</div><div class="step-main"><h3>Unlock gated video, replay, and community offers</h3><p>Once access is verified, the audience reaches the protected content experience and sees purchase history, access status, and support paths in plain language.</p></div><div class="step-proof"><span class="tag green">Gated player</span><span class="tag blue">Purchase history</span><span class="tag amber">Support path</span></div></article>
+          <article class="step"><div class="step-kicker">Creator</div><div class="step-main"><h3>Creators manage profile, offer, media readiness, and payout visibility</h3><p>Creators get a focused operating surface for onboarding, media, offers, sales, and payable summaries — without self-approving into the marketplace.</p></div><div class="step-proof"><span class="tag blue">Onboarding checklist</span><span class="tag blue">Offer editor</span><span class="tag amber">Approval required</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="control-plane">
+      <div class="shell demo-screen">
+        <div class="dashboard" aria-label="Admin dashboard mockup">
+          <div class="dash-head"><div class="dash-title">Strmit Control Plane</div><span class="tag green">Pilot mode</span></div>
+          <div class="dash-body">
+            <div class="side"><div class="active">Overview</div><div>Creator queue</div><div>Orders</div><div>Entitlements</div><div>Ledger</div><div>Payout export</div><div>Audit log</div></div>
+            <div class="main">
+              <div class="metric-row"><div class="metric"><span>Access issues</span><b>3</b></div><div class="metric"><span>Creators pending</span><b>7</b></div><div class="metric"><span>Exportable payables</span><b>$12.4k</b></div></div>
+              <table><thead><tr><th>Signal</th><th>Status</th><th>Owner</th></tr></thead><tbody><tr><td>Paid / no access</td><td><span class="tag amber">Review</span></td><td>Support</td></tr><tr><td>Creator launch readiness</td><td><span class="tag blue">Checklist</span></td><td>Ops</td></tr><tr><td>Webhook duplicate</td><td><span class="tag green">Handled</span></td><td>System</td></tr><tr><td>Payout export</td><td><span class="tag blue">Manual</span></td><td>Finance</td></tr></tbody></table>
+            </div>
+          </div>
+        </div>
+        <div class="copy-block">
+          <div class="eyebrow">Not just a media frontend</div>
+          <h3>The operational control plane is the wedge.</h3>
+          <p>For a real paid creator pilot, the riskiest moments are not the pretty screens — they are payment ambiguity, missing entitlements, creator approval, payout reconciliation, and support repair. Strmit makes those states visible and auditable.</p>
+          <div class="proof-list">
+            <div class="proof-item"><span class="check">✓</span><span>Admin approval queue keeps creator onboarding controlled.</span></div>
+            <div class="proof-item"><span class="check">✓</span><span>Payment, order, and entitlement diagnosis is explicit.</span></div>
+            <div class="proof-item"><span class="check">✓</span><span>Ledger and payout exports support manual pilot operations before automation.</span></div>
+            <div class="proof-item"><span class="check">✓</span><span>Audit trail protects sensitive support and repair actions.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="book">
+      <div class="shell">
+        <div class="cta">
+          <img src="assets/technotainment-symbol.svg" alt="Technotainment symbol" />
+          <h2>Use this as the public walkthrough link.</h2>
+          <p>This page is intentionally curated: it explains the Technotainment / Strmit direction, demonstrates the core paid creator loop, and avoids internal financial assumptions, sensitive pipeline detail, and implementation secrets.</p>
+          <div class="actions" style="justify-content:center"><a class="btn primary" href="mailto:darren@technotainment.com?subject=Technotainment%20%2F%20Strmit%20Demo">Contact Technotainment</a><a class="btn secondary" href="#top">Replay walkthrough</a></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">© Technotainment. Strmit demo walkthrough. Curated preview — not production software, not final scope, and not financial advice.</div>
+  </footer>
+</body>
+</html>
