@@ -56,13 +56,18 @@ Track progress by checking boxes in this file as you go.
 > charge (Stripe test logic) until you add keys. Note: staff/admin sign-in arrives with **Phase 4**
 > (the user role enum is member/creator today). Next up: **Phase 3 — Creator Studio**.
 
-## Phase 3 — Creator Studio
-- [ ] Onboarding mints a **fresh empty channel** (not the Nyx demo) + first tier + payout method.
-- [ ] Content: upload via Mux (direct upload), processing states, per-video editor incl. **SEO fields**.
-- [ ] Go-live: stream key (rotatable), Mux ingest, live chat + viewer counts (Redis), recording → VOD.
-- [ ] Store/drops, memberships/tiers, audience, analytics.
-- [ ] **Earnings/payouts:** withdraw via Stripe Connect; 7-day hold; statements; KYC (Persona) before first payout.
-- **DoD:** a creator uploads a video, goes live (test), sells a membership, and requests a payout that clears in test mode.
+## Phase 3 — Creator Studio  ✅ complete (2026-05-30)
+- [x] Onboarding mints a **fresh empty channel** (not the Nyx demo) + first tier + payout method, and flips the user to creator. 5-step flow.
+- [x] Content: upload via the VideoProvider (Mux mock, direct upload) → processing state; per-video editor with **SEO fields** (slug + canonical preview, metaDescription ≤160, visibility public/members/ppv, captions) + publish.
+- [x] Go-live: rotatable stream key + RTMP ingest (Mux mock), recording → VOD on end. (Live chat + viewer counts are simulated; realtime is **Phase 5**.)
+- [x] Store/drops, memberships/tiers, audience roster, analytics (views/revenue/by-kind).
+- [x] **Earnings/payouts:** derived earnings (net via per-creator fee) with a **7-day hold**; withdraw via the PayoutProvider (Stripe Connect mock); **KYC (Persona mock) required before first payout**; payout history + methods.
+- **DoD:** ✅ verified live as @nyxsynth — uploads + publishes a video, goes live then ends (recording → VOD), KYC-gates then withdraws 10,000 CAST → **PO held (£100.00) → cleared to paid**; selling a membership flows to earnings. 24/24 tests (incl. 4 earnings/payout: fee derivation, KYC gate, request+clear, overdraw). No onboarding redirect loop.
+
+> **Owner note (Phase 3):** creators can now run a channel end-to-end — onboard, upload + SEO-tune
+> videos, go live (test stream), set memberships/store, see analytics, and **get paid** (KYC →
+> withdraw → clears after the hold). Still mocked: real Mux ingest + Stripe Connect payouts until
+> keys are added. Next up: **Phase 4 — Admin / Operations** (incl. staff sign-in + payout runs).
 
 ## Phase 4 — Admin / Operations
 - [ ] Overview, users (suspend/KYC), creators + **applications/approval**, moderation (queue + live monitor + 3-strike).
