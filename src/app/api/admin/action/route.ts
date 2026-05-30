@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireStaff, AdminError } from "@/lib/admin";
 import * as admin from "@/lib/admin";
+import { rateLimit } from "@/lib/ratelimit";
 
 /**
  * Unified admin action endpoint. Every branch is staff-gated and audited inside the service.
@@ -14,6 +15,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "staff only" }, { status: 403 });
   }
   const who = staff.email;
+  const rl = await rateLimit(`admin:${staff.userId}`, 60, 60);
+  if (!rl.ok) return NextResponse.json({ error: "too many requests" }, { status: 429 });
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const resource = String(b.resource ?? "");
   const action = String(b.action ?? "");

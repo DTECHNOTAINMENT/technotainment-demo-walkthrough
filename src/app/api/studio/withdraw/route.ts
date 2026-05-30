@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireCreatorChannel, StudioError } from "@/lib/studio";
 import { requestPayout, PayoutError } from "@/lib/earnings";
+import { rateLimit } from "@/lib/ratelimit";
 
 // POST /api/studio/withdraw { cast, payoutMethodId? } — request a payout of available CAST.
 export async function POST(req: Request) {
   try {
     const { creator } = await requireCreatorChannel();
+    const rl = await rateLimit(`withdraw:${creator.id}`, 10, 60);
+    if (!rl.ok) return NextResponse.json({ error: "too many requests, slow down" }, { status: 429 });
     const { cast, payoutMethodId } = (await req.json().catch(() => ({}))) as {
       cast?: number;
       payoutMethodId?: string;

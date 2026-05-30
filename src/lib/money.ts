@@ -8,18 +8,17 @@ import { prisma } from "@/lib/db";
 import { payments, type PaymentMethodId } from "@/lib/integrations";
 import { assertCast, formatFiat, type Cast } from "@/lib/cast";
 import { deriveBalance, canSpend, type WalletEntryKind } from "@/lib/ledger";
-import { economy } from "@/lib/config";
+import { getFees } from "@/lib/settings";
 
 export type SpendKind = "tip" | "membership" | "drop" | "ppv" | "gift";
 
 export class MoneyError extends Error {}
 
+// Sanity cap on any single CAST movement (£1,000,000) — defence-in-depth against bad input.
+const MAX_CAST = 100_000_000;
+
 function genTxnId(): string {
-  const hex = Math.floor(Math.random() * 0xfffff)
-    .toString(16)
-    .toUpperCase()
-    .padStart(4, "0");
-  return `TXR-${hex}`;
+  return `TXR-${crypto.randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase()}`;
 }
 
 export async function balanceOf(userId: string): Promise<Cast> {
@@ -43,9 +42,11 @@ export async function topUp(input: {
   cast: Cast;
 }): Promise<TopupResult> {
   assertCast(input.cast, "topup cast");
-  if (input.cast < economy.minTopUpCast) {
-    throw new MoneyError(`minimum top-up is ${economy.minTopUpCast} CAST`);
+  const fees = await getFees();
+  if (input.cast < fees.minTopUpCast) {
+    throw new MoneyError(`minimum top-up is ${fees.minTopUpCast} CAST`);
   }
+  if (input.cast > MAX_CAST) throw new MoneyError("amount exceeds the maximum");
 
   // Our own unique transaction id is the single key (the provider intent id is internal to
   // the adapter; the real Stripe adapter maps provider-intent ↔ our txn in Phase 6).
@@ -70,8 +71,12 @@ export async function topUp(input: {
   return { transactionId, needs3ds: false, status: "settled", balance };
 }
 
-/** Complete a card top-up's 3DS challenge, then settle. */
-export async function confirmTopup(input: { transactionId: string; code?: string }): Promise<TopupResult> {
+/** Complete a card top-up's 3DS challenge, then settle. Verifies the caller owns the txn. */
+export async function confirmTopup(input: { userId: string; transactionId: string; code?: string }): Promise<TopupResult> {
+  const txn = await prisma.transaction.findUnique({ where: { id: input.transactionId }, select: { userId: true, kind: true } });
+  if (!txn || txn.kind !== "topup") throw new MoneyError("unknown top-up");
+  if (txn.userId !== input.userId) throw new MoneyError("not your transaction");
+
   const res = await payments.confirm3ds({ transactionId: input.transactionId, challengeCode: input.code });
   if (res.status !== "settled") {
     await prisma.transaction.update({ where: { id: input.transactionId }, data: { status: "reversed" } });
@@ -119,8 +124,24 @@ export async function spend(input: {
 }): Promise<SpendResult> {
   assertCast(input.cast, "spend cast");
   if (input.cast <= 0) throw new MoneyError("spend amount must be positive");
+  if (input.cast > MAX_CAST) throw new MoneyError("amount exceeds the maximum");
   const txnId = genTxnId();
   const delta = -input.cast;
+
+  // Validate referenced resources exist + are consistent (avoid P2025 500s / orphan rows).
+  if (input.channelId) {
+    const ch = await prisma.channel.findUnique({ where: { id: input.channelId }, select: { id: true } });
+    if (!ch) throw new MoneyError("channel not found");
+  }
+  if (input.kind === "membership") {
+    if (!input.tierId || !input.channelId) throw new MoneyError("membership needs a tier + channel");
+    const tier = await prisma.tier.findFirst({ where: { id: input.tierId, channelId: input.channelId }, select: { id: true } });
+    if (!tier) throw new MoneyError("tier not found for this channel");
+  }
+  if (input.productId) {
+    const prod = await prisma.product.findFirst({ where: { id: input.productId, channelId: input.channelId }, select: { id: true } });
+    if (!prod) throw new MoneyError("product not found for this channel");
+  }
 
   return prisma.$transaction(async (tx) => {
     const rows = await tx.walletEntry.findMany({ where: { userId: input.userId }, select: { deltaCast: true } });

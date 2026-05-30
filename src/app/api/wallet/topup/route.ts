@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentSession } from "@/lib/session";
 import { topUp, confirmTopup, MoneyError } from "@/lib/money";
+import { rateLimit } from "@/lib/ratelimit";
 import type { PaymentMethodId } from "@/lib/integrations";
 
 // POST /api/wallet/topup        { methodId, cast }            -> begin top-up (3DS for cards)
@@ -16,9 +17,12 @@ export async function POST(req: Request) {
     code?: string;
   };
 
+  const rl = await rateLimit(`topup:${session.userId}`, 15, 60);
+  if (!rl.ok) return NextResponse.json({ error: "too many requests, slow down" }, { status: 429 });
+
   try {
     if (body.confirm) {
-      const result = await confirmTopup({ transactionId: body.confirm, code: body.code });
+      const result = await confirmTopup({ userId: session.userId, transactionId: body.confirm, code: body.code });
       return NextResponse.json(result);
     }
     if (!body.methodId || typeof body.cast !== "number") {

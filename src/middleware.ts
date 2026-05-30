@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifySession } from "@/lib/session-token";
 
 /**
  * Route protection (the real gate — pages trust this).
@@ -14,20 +15,17 @@ import type { NextRequest } from "next/server";
 
 type Role = "member" | "creator" | "staff";
 
-function readRole(req: NextRequest): Role | null {
+async function readRole(req: NextRequest): Promise<Role | null> {
   const raw = req.cookies.get("tt_session")?.value;
   if (!raw) return null;
-  try {
-    const parsed = JSON.parse(decodeURIComponent(raw)) as { role?: Role };
-    return parsed.role ?? null;
-  } catch {
-    return null;
-  }
+  // Verify the HMAC signature — a tampered cookie (e.g. role escalated to "staff") fails here.
+  const parsed = await verifySession<{ role?: Role }>(raw);
+  return parsed?.role ?? null;
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const role = readRole(req);
+  const role = await readRole(req);
 
   // Admin sign-in is the staff entry point — always reachable.
   if (pathname === "/admin/signin") return NextResponse.next();

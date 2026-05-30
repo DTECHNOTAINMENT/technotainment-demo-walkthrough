@@ -43,7 +43,7 @@ d("money service (integration)", () => {
     const r = await money.topUp({ userId, methodId: "visa", cast: 5000 });
     expect(r.needs3ds).toBe(true);
     expect(await money.balanceOf(userId)).toBe(5000); // not credited yet
-    const c = await money.confirmTopup({ transactionId: r.transactionId, code: "123456" });
+    const c = await money.confirmTopup({ userId, transactionId: r.transactionId, code: "123456" });
     expect(c.status).toBe("settled");
     expect(await money.balanceOf(userId)).toBe(10000);
   });

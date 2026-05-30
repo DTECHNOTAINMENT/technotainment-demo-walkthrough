@@ -87,9 +87,14 @@ export async function refundTransaction(who: string, txnId: string) {
     const txn = await tx.transaction.findUnique({ where: { id: txnId } });
     if (!txn) throw new AdminError("transaction not found");
     if (txn.status === "reversed") throw new AdminError("already reversed");
+    // Only spends (negative cast) are refunded here — refunding a top-up would claw back funds the
+    // user may have already spent and drive the balance negative (it bypasses the overdraw guard).
+    if (txn.cast >= 0) throw new AdminError("only spends can be refunded");
+    // Idempotency at the ledger level: never write a second refund entry for the same txn.
+    const existing = await tx.walletEntry.findFirst({ where: { ref: txnId, kind: "refund" } });
+    if (existing) throw new AdminError("already refunded");
 
-    // Reverse the ledger effect: a spend (negative cast) is refunded as +abs; a topup is clawed back.
-    const refundDelta = -txn.cast; // negate original effect
+    const refundDelta = -txn.cast; // positive — return CAST to the fan
     await tx.walletEntry.create({
       data: { userId: txn.userId, deltaCast: refundDelta, kind: "refund", ref: txnId },
     });

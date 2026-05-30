@@ -7,7 +7,7 @@
 import { prisma } from "@/lib/db";
 import { payouts, type PayoutMethodId } from "@/lib/integrations";
 import { feeSplit, formatFiat, assertCast, type Cast } from "@/lib/cast";
-import { economy } from "@/lib/config";
+import { getFees } from "@/lib/settings";
 
 export class PayoutError extends Error {}
 
@@ -32,7 +32,8 @@ export async function creatorEarnings(creatorId: string): Promise<EarningsSummar
   if (!creator?.channel) throw new PayoutError("creator has no channel");
 
   const takeRate = creator.takeRatePct / 100;
-  const holdCutoff = new Date(Date.now() - economy.payoutHoldDays * 24 * 60 * 60 * 1000);
+  const fees = await getFees();
+  const holdCutoff = new Date(Date.now() - fees.payoutHoldDays * 24 * 60 * 60 * 1000);
 
   const txns = await prisma.transaction.findMany({
     where: { channelId: creator.channel.id, status: "settled", kind: { in: [...REVENUE_KINDS] } },
@@ -64,7 +65,7 @@ export async function creatorEarnings(creatorId: string): Promise<EarningsSummar
 }
 
 function genPayoutId(): string {
-  return `PO-${Math.floor(1000 + Math.random() * 8999)}`;
+  return `PO-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
 }
 
 /** Request a withdrawal of available CAST. KYC must be verified first (before first payout). */
@@ -75,7 +76,8 @@ export async function requestPayout(input: {
 }): Promise<{ payoutId: string; status: "held" | "pending" | "paid"; netFiat: string }> {
   assertCast(input.cast, "payout cast");
   if (input.cast <= 0) throw new PayoutError("payout amount must be positive");
-  if (input.cast < economy.minPayoutCast) throw new PayoutError("below minimum payout");
+  const fees = await getFees();
+  if (input.cast < fees.minPayoutCast) throw new PayoutError("below minimum payout");
 
   const creator = await prisma.creator.findUnique({
     where: { id: input.creatorId },

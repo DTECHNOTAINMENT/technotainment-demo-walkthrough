@@ -54,8 +54,10 @@ export async function onboard(input: {
   const existing = await prisma.creator.findUnique({ where: { handle } });
   if (existing) throw new StudioError("handle taken");
 
-  const creatorId = `cr-${slugify(input.handle)}`;
-  const channelId = `ch-${slugify(input.handle)}`;
+  // Random suffix avoids primary-key collisions when two handles slugify alike (URLs use @handle).
+  const rand = crypto.randomUUID().slice(0, 8);
+  const creatorId = `cr-${slugify(input.handle)}-${rand}`;
+  const channelId = `ch-${slugify(input.handle)}-${rand}`;
 
   return prisma.$transaction(async (tx) => {
     const creator = await tx.creator.create({
@@ -77,7 +79,7 @@ export async function onboard(input: {
     });
     await tx.tier.create({
       data: {
-        id: `tier-${slugify(input.handle)}-1`,
+        id: `tier-${rand}-1`,
         channelId: channel.id,
         name: input.firstTier.name,
         priceCast: input.firstTier.priceCast,

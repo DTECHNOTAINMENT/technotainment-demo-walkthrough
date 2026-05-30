@@ -402,8 +402,10 @@ model WalletEntry {
 
   user User @relation(fields: [userId], references: [id])
 
+  // One ledger entry per (transaction, kind): DB-level idempotency so a replayed settle/refund
+  // can never double-credit, even under concurrent requests.
+  @@unique([ref, kind])
   @@index([userId])
-  @@index([ref])
 }
 
 /// Transaction — prototype: ADMIN.TXNS. grossFiat is a display String (topups only).

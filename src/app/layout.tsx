@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
-import { branding } from "@/lib/config";
 import { ThemeScript } from "@/components/theme";
 import { CookieConsent } from "@/components/CookieConsent";
+import { getBranding } from "@/lib/settings";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: `${branding.appName} — ${branding.companyName}`,
-    template: `%s · ${branding.appName}`,
-  },
-  description: `${branding.companyName}: ${branding.tagline}. Live-streaming + VOD powered by ${branding.currencyName}.`,
-  applicationName: branding.appName,
-};
+// Branding is read from the DB (Admin → control center) at runtime — a rename/recolour needs no
+// deploy. Falls back to the seeded defaults in lib/config when no override is set.
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getBranding();
+  return {
+    title: { default: `${branding.appName} — ${branding.companyName}`, template: `%s · ${branding.appName}` },
+    description: `${branding.companyName}: ${branding.tagline}. Live-streaming + VOD powered by ${branding.currencyName}.`,
+    applicationName: branding.appName,
+  };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const branding = await getBranding();
   return (
     // Dark-first; ThemeScript flips data-theme from localStorage before paint (no flash).
     <html lang="en" data-theme={branding.defaultTheme} suppressHydrationWarning>

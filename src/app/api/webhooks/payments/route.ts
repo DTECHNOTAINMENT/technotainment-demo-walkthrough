@@ -9,14 +9,20 @@ import { captureError } from "@/lib/observability";
  * Stripe adapter (STRIPE_WEBHOOK_SECRET); in dev the mock posts unsigned events.
  */
 export async function POST(req: Request) {
+  // When a webhook secret is configured, require it. (Real Stripe uses an HMAC `stripe-signature`
+  // header verified with the SDK — wired with the real adapter. The shared-secret header here is the
+  // minimum bar so the endpoint isn't world-writable once it's reachable.) In dev/mock it's open.
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (secret && req.headers.get("x-webhook-secret") !== secret) {
+    return NextResponse.json({ error: "invalid signature" }, { status: 401 });
+  }
+
   let event: { type?: string; data?: { transactionId?: string } };
   try {
     event = (await req.json()) as typeof event;
   } catch {
     return NextResponse.json({ error: "invalid payload" }, { status: 400 });
   }
-
-  // TODO(prod): verify Stripe signature header against STRIPE_WEBHOOK_SECRET before trusting.
 
   try {
     switch (event.type) {
