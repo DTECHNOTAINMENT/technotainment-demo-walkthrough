@@ -5,6 +5,8 @@ const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
+  // Run src/instrumentation.ts at startup (Phase 6 launch gate).
+  experimental: { instrumentationHook: true },
   // Structured logs to stdout work with CloudWatch out of the box.
   logging: {
     fetches: { fullUrl: false },

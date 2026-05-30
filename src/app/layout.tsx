@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { branding } from "@/lib/config";
 import { ThemeScript } from "@/components/theme";
+import { CookieConsent } from "@/components/CookieConsent";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,7 +26,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <ThemeScript />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieConsent />
+      </body>
     </html>
   );
 }
