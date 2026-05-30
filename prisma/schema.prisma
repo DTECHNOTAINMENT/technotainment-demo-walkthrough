@@ -1,0 +1,625 @@
+// Technotainment (Metascape) — Prisma schema
+// Production data model for Phase 0. Mirrors docs/DATA_MODEL.md so screens map 1:1.
+// MONEY RULE: all money is integer CAST (Int). 100 CAST = £1.00.
+//   Exception: Transaction.grossFiat is a pre-formatted display String? (topups only).
+// Balance is DERIVED from the WalletEntry append-only ledger — there is NO mutable
+// balance column on User.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS — string unions from docs/DATA_MODEL.md
+// =============================================================================
+
+enum UserRole {
+  member
+  creator
+}
+
+enum KycStatus {
+  none
+  pending
+  verified
+  failed
+}
+
+enum UserStatus {
+  active
+  pending
+  suspended
+}
+
+enum CreatorStatus {
+  active
+  review
+  payout_hold @map("payout-hold")
+  suspended
+}
+
+enum VideoKind {
+  vod
+  clip
+}
+
+enum VideoStatus {
+  draft
+  processing
+  published
+}
+
+enum Visibility {
+  public
+  members
+  ppv
+}
+
+enum StreamStatus {
+  offline
+  preview
+  live
+  ended
+}
+
+enum StreamHealthState {
+  healthy
+  degraded
+}
+
+enum MembershipStatus {
+  active
+  canceled
+  past_due
+}
+
+enum ProductKind {
+  drop
+  ppv
+  course
+  merch
+}
+
+enum ProductStatus {
+  draft
+  live
+}
+
+enum WalletEntryKind {
+  topup
+  tip
+  membership
+  drop
+  ppv
+  gift
+  refund
+  payout
+}
+
+enum TransactionKind {
+  topup
+  tip
+  membership
+  drop
+  ppv
+  gift
+}
+
+enum TransactionStatus {
+  pending
+  settled
+  reversed
+}
+
+enum TransactionFlag {
+  chargeback
+  fraud
+}
+
+enum PayoutStatus {
+  pending
+  paid
+  held
+}
+
+enum PayoutRunStatus {
+  scheduled
+  paid
+  held
+}
+
+enum ReportTargetType {
+  user
+  stream
+  vod
+  product
+  clip
+}
+
+enum ReportSeverity {
+  low
+  medium
+  high
+}
+
+enum ReportStatus {
+  open
+  investigating
+  actioned
+  dismissed
+}
+
+enum ConnectorStatus {
+  live
+  beta
+  off
+}
+
+enum PaymentMethodGroup {
+  express
+  card
+  bank
+  wallet
+  later
+  crypto
+}
+
+enum AdminRole {
+  owner
+  trust_safety @map("trust-safety")
+  finance
+  support
+}
+
+// =============================================================================
+// CORE ENTITIES
+// =============================================================================
+
+/// User — viewers and creators. castBalance is DERIVED from walletEntries (no column).
+model User {
+  id                String     @id // "U-48210"
+  handle            String     @unique // "@mira.k"
+  email             String     @unique
+  displayName       String
+  avatarUrl         String?
+  role              UserRole   @default(member)
+  kyc               KycStatus  @default(none)
+  status            UserStatus @default(active)
+  // castBalance: DERIVED from walletEntries — intentionally NOT stored.
+  lifetimeSpentCast Int        @default(0)
+  flags             String[]   @default([]) // e.g. ["fraud signals"]
+  createdAt         DateTime   @default(now())
+
+  creator        Creator?
+  walletEntries  WalletEntry[]
+  transactions   Transaction[]
+  paymentMethods PaymentMethod[]
+  memberships    Membership[]
+  consentGrants  ConsentGrant[]
+  follows        Follow[]
+
+  @@index([status])
+  @@index([kyc])
+}
+
+/// Follow — a fan following a channel (v1 scope; powers /following + go-live alerts).
+model Follow {
+  id        String   @id @default(cuid())
+  userId    String
+  channelId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  channel Channel @relation(fields: [channelId], references: [id])
+
+  @@unique([userId, channelId])
+  @@index([channelId])
+}
+
+/// Creator — prototype: CREATORS. Owns a Channel.
+model Creator {
+  id          String        @id // "nyx"
+  userId      String        @unique
+  name        String // "Nyx Okafor"
+  handle      String        @unique // "@nyxsynth"
+  brand       String // hex primary "#7c3aed"
+  brand2      String // hex secondary "#ec4899"
+  category    String // "modular synth"
+  followers   Int           @default(0)
+  bio         String?
+  takeRatePct Int           @default(12) // platform fee; negotiable per-creator
+  status      CreatorStatus @default(active)
+  createdAt   DateTime      @default(now())
+
+  user          User           @relation(fields: [userId], references: [id])
+  channel       Channel?
+  payouts       Payout[]
+  payoutMethods PayoutMethod[]
+  consentGrants ConsentGrant[]
+
+  @@index([status])
+}
+
+/// Channel — public storefront for a Creator. URL: /c/:handle
+model Channel {
+  id        String   @id
+  creatorId String   @unique
+  handle    String   @unique // mirrors creator handle, used in /c/:handle
+  name      String
+  bio       String?
+  createdAt DateTime @default(now())
+
+  creator          Creator           @relation(fields: [creatorId], references: [id])
+  videos           Video[]
+  streams          Stream[]
+  tiers            Tier[]
+  products         Product[]
+  memberships      Membership[]
+  scheduledStreams ScheduledStream[]
+  followers        Follow[]
+}
+
+/// Video — prototype: STUDIO.CONTENT, NYX_LIBRARY
+model Video {
+  id              String      @id
+  channelId       String
+  title           String
+  slug            String      @unique // editable; "/watch/:slug"
+  description     String      @default("")
+  metaDescription String? // SEO (<=160)
+  thumbUrl        String
+  ogImageUrl      String? // social card (auto-gen fallback)
+  kind            VideoKind   @default(vod)
+  status          VideoStatus @default(draft)
+  visibility      Visibility  @default(public)
+  ppvPriceCast    Int? // when visibility = ppv
+  durationSec     Int         @default(0)
+  views           Int         @default(0)
+  castEarned      Int         @default(0)
+  captions        Boolean     @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime    @default(now())
+
+  channel  Channel   @relation(fields: [channelId], references: [id])
+  chapters Chapter[]
+
+  @@index([channelId])
+  @@index([status])
+}
+
+/// Chapter — timestamped markers on a Video.
+model Chapter {
+  id      String @id @default(cuid())
+  videoId String
+  atSec   Int
+  label   String
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([videoId])
+}
+
+/// Stream (live) — prototype: GoLiveScreen, LIVE_PAGE
+model Stream {
+  id                String             @id
+  channelId         String
+  title             String
+  category          String
+  visibility        Visibility         @default(public)
+  status            StreamStatus       @default(offline)
+  // ingest (flattened) — streamKey is secret, rotatable
+  rtmpUrl           String
+  streamKey         String
+  // health (flattened, optional)
+  healthResolution  String?
+  healthBitrateMbps Float?
+  healthState       StreamHealthState?
+  viewers           Int                @default(0)
+  startedAt         DateTime?
+  recordingVideoId  String? // VOD created on end
+  createdAt         DateTime           @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id])
+
+  @@index([channelId])
+  @@index([status])
+}
+
+/// Tier (membership) — prototype: NYX_TIERS, STUDIO.TIERS
+model Tier {
+  id        String   @id
+  channelId String
+  name      String // "patch archive"
+  priceCast Int // monthly
+  perks     String[] @default([])
+  popular   Boolean  @default(false)
+  // memberCount: DERIVED from memberships
+  createdAt DateTime @default(now())
+
+  channel     Channel      @relation(fields: [channelId], references: [id])
+  memberships Membership[]
+
+  @@index([channelId])
+}
+
+/// Membership — a User's subscription to a Tier. priceCastLocked grandfathers rate.
+model Membership {
+  id              String           @id @default(cuid())
+  userId          String
+  tierId          String
+  channelId       String
+  status          MembershipStatus @default(active)
+  startedAt       DateTime         @default(now())
+  renewsAt        DateTime?
+  priceCastLocked Int
+
+  user    User    @relation(fields: [userId], references: [id])
+  tier    Tier    @relation(fields: [tierId], references: [id])
+  channel Channel @relation(fields: [channelId], references: [id])
+
+  @@index([userId])
+  @@index([tierId])
+  @@index([channelId])
+}
+
+/// Product — prototype: NYX_STORE, STUDIO.PRODUCTS
+model Product {
+  id        String        @id
+  channelId String
+  kind      ProductKind
+  name      String
+  priceCast Int
+  edition   String?
+  imgUrl    String
+  status    ProductStatus @default(draft)
+  sold      Int           @default(0)
+  stock     Int? // null = unlimited / not stocked
+  createdAt DateTime      @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id])
+
+  @@index([channelId])
+}
+
+// =============================================================================
+// MONEY
+// =============================================================================
+
+/// WalletEntry — append-only ledger. Source of truth for a user's balance.
+/// Sum of deltaCast across a user's entries = castBalance.
+model WalletEntry {
+  id        String          @id @default(cuid())
+  userId    String
+  deltaCast Int // +topup, -spend, +refund
+  kind      WalletEntryKind
+  ref       String // related Transaction / Payout id
+  createdAt DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  // One ledger entry per (transaction, kind): DB-level idempotency so a replayed settle/refund
+  // can never double-credit, even under concurrent requests.
+  @@unique([ref, kind])
+  @@index([userId])
+}
+
+/// Transaction — prototype: ADMIN.TXNS. grossFiat is a display String (topups only).
+model Transaction {
+  id        String            @id // "TXR-9F2A"
+  userId    String
+  channelId String?
+  kind      TransactionKind
+  grossFiat String? // "£42.00" — pre-formatted display, topups only
+  cast      Int // signed CAST
+  method    String // PaymentMethod id, e.g. "apple-pay", "balance"
+  status    TransactionStatus @default(pending)
+  flag      TransactionFlag?
+  createdAt DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// PaymentMethod (top-up) — prototype: payments.jsx TOPUP_METHODS
+model PaymentMethod {
+  id        String             @id // "visa-4291"
+  userId    String? // null for registry/template rows
+  methodId  String // canonical rail id: "apple-pay", "visa", ...
+  label     String
+  group     PaymentMethodGroup
+  sub       String?
+  instant   Boolean            @default(false)
+  needs3ds  Boolean            @default(false)
+  regions   String?
+  createdAt DateTime           @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+/// PayoutMethod (creator) — prototype: payments.jsx PAYOUT_METHODS
+model PayoutMethod {
+  id        String   @id @default(cuid())
+  creatorId String
+  methodId  String // "bank", "instant", "paypal", "venmo", "wise", "payoneer", "usdc"
+  label     String
+  sub       String?
+  fee       String   @default("free") // "free" | "1.5%" | "network"
+  speed     String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  creator Creator  @relation(fields: [creatorId], references: [id])
+  payouts Payout[]
+
+  @@index([creatorId])
+}
+
+/// Payout — a single creator withdrawal. prototype: STUDIO.PAYOUT_HISTORY
+model Payout {
+  id             String       @id // "PO-2041"
+  creatorId      String
+  payoutMethodId String?
+  cast           Int
+  feeCast        Int          @default(0)
+  netFiat        String? // "£1,886.00" display
+  method         String // method label/id snapshot
+  status         PayoutStatus @default(pending)
+  date           DateTime     @default(now())
+
+  creator      Creator       @relation(fields: [creatorId], references: [id])
+  payoutMethod PayoutMethod? @relation(fields: [payoutMethodId], references: [id])
+
+  @@index([creatorId])
+  @@index([status])
+}
+
+/// PayoutRun — scheduled batch run. prototype: ADMIN.PAYOUT_RUNS
+model PayoutRun {
+  id           String          @id // "RUN-2041"
+  date         DateTime
+  creatorCount Int             @default(0)
+  cast         Int             @default(0)
+  method       String? // "mixed"
+  status       PayoutRunStatus @default(scheduled)
+  createdAt    DateTime        @default(now())
+
+  @@index([status])
+}
+
+// =============================================================================
+// TRUST & SAFETY / OPERATIONAL
+// =============================================================================
+
+/// Report — moderation queue. prototype: ADMIN.REPORTS
+model Report {
+  id          String           @id // "R-9921"
+  targetType  ReportTargetType
+  targetId    String // handle / title / id of target
+  reason      String
+  reportCount Int              @default(1)
+  severity    ReportSeverity   @default(low)
+  status      ReportStatus     @default(open)
+  createdAt   DateTime         @default(now())
+
+  @@index([status])
+  @@index([severity])
+}
+
+/// ConsentGrant — per-creator scoped consent. prototype: profile.jsx
+model ConsentGrant {
+  id             String   @id @default(cuid())
+  userId         String
+  creatorId      String
+  watchHistory   Boolean  @default(false)
+  chatMessages   Boolean  @default(false)
+  tipsPurchases  Boolean  @default(false)
+  marketingEmail Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  creator Creator @relation(fields: [creatorId], references: [id])
+
+  @@unique([userId, creatorId])
+  @@index([userId])
+}
+
+/// Connector — integration registry. prototype: ADMIN.CONNECTORS
+model Connector {
+  id        String          @id // "stripe"
+  name      String
+  cat       String // payments, identity, risk, media, comms, tax, data, growth, trust, infra
+  status    ConnectorStatus @default(off)
+  desc      String
+  events    String? // "1.2M / mo"
+  createdAt DateTime        @default(now())
+
+  @@index([cat])
+}
+
+/// ApiKey — prototype: ADMIN.API_KEYS
+model ApiKey {
+  id        String   @id // "pk_live"
+  label     String
+  scope     String // "client" | "server"
+  value     String
+  secret    Boolean  @default(false)
+  lastUsed  String?
+  createdAt DateTime @default(now())
+}
+
+/// Webhook — prototype: ADMIN.WEBHOOKS
+model Webhook {
+  id        String   @id @default(cuid())
+  url       String
+  events    String // "payment.*"
+  status    String   @default("healthy")
+  delivered String? // "99.9%"
+  createdAt DateTime @default(now())
+}
+
+/// FeatureFlag — prototype: ADMIN.FLAGS
+model FeatureFlag {
+  id        String   @id // "small-rooms"
+  label     String
+  on        Boolean  @default(false)
+  rollout   String   @default("0%")
+  desc      String
+  group     String   @default("live") // "live" | "roadmap"
+  createdAt DateTime @default(now())
+}
+
+/// AuditEvent — append-only operational log. prototype: ADMIN.AUDIT
+model AuditEvent {
+  id     String   @id @default(cuid())
+  who    String
+  action String
+  kind   String // "moderation" | "finance" | "security" | ...
+  when   DateTime @default(now())
+
+  @@index([kind])
+}
+
+/// AdminUser — back-office staff (RBAC). prototype: ADMIN.ADMIN_TEAM
+model AdminUser {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  role      AdminRole @default(support)
+  mfa       Boolean   @default(false)
+  createdAt DateTime  @default(now())
+}
+
+/// Setting — DB-backed config for the Admin control center ("configure, don't code",
+/// CLAUDE.md §4b). Read at runtime; defaults seeded from lib/config. Owner-editable, audited.
+model Setting {
+  key       String   @id // "branding", "fees", "policies", ...
+  valueJson Json
+  updatedAt DateTime @updatedAt
+}
+
+/// ScheduledStream — upcoming streams on a channel. prototype: STUDIO.SCHEDULE
+model ScheduledStream {
+  id          String     @id
+  channelId   String
+  title       String
+  whenLabel   String // "today · 21:00" (display)
+  scheduledAt DateTime?
+  category    String?
+  visibility  Visibility @default(public)
+  reminders   Int        @default(0)
+  createdAt   DateTime   @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id])
+
+  @@index([channelId])
+}

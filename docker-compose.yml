@@ -1,0 +1,48 @@
+# Local dev services mirroring the prod service shape (Postgres + Redis), plus the app.
+# `docker compose up` proves the app is host-portable for the AWS target
+# (RDS + ElastiCache map 1:1). See docs/INFRASTRUCTURE.md §2/§3.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: technotainment
+      POSTGRES_PASSWORD: technotainment
+      POSTGRES_DB: technotainment
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U technotainment"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      LAUNCH_MODE: dev
+      DATABASE_URL: postgresql://technotainment:technotainment@db:5432/technotainment
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

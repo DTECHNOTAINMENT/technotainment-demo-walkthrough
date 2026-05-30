@@ -1,0 +1,195 @@
+/* Creator Studio — additive styles on top of theme.css */
+
+/* Studio establishes a correct default text colour for both themes
+   (the app is dark-first; base body text is white, which would vanish
+   on light surfaces). Explicit colours and gradient text still win. */
+.studio-scope { color: var(--ink-1); }
+.studio-scope a { color: inherit; }
+
+/* ---- Unified top bar: sidebar brand strip blends into the topbar ----
+   One continuous 60px header band across sidebar + main column,
+   so the brand mark appears exactly once (top-left). */
+.sb-head {
+  position: sticky; top: 0; z-index: 5;
+  height: 60px; flex: 0 0 60px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 9px;
+  padding: 0 18px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--hairline);
+}
+.topbar {
+  border-bottom: 1px solid var(--hairline);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.topbar > div { min-height: 60px; box-sizing: border-box; }
+
+/* Studio is visually distinguished by a subtle warm-to-cool top seam + "studio" wordmark */
+.studio-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 3px 9px; border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-2);
+}
+
+/* On-air indicator */
+.onair {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 10px; border-radius: 999px;
+  background: var(--live-gradient); color: white;
+  font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.onair::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; background: white;
+  animation: liveDot 1.4s ease-out infinite;
+}
+
+/* KPI grid */
+.kpi-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0,1fr)); }
+@media (min-width: 720px)  { .kpi-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (min-width: 1100px) { .kpi-grid { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+
+/* Two-column studio layout (main + rail) */
+.st-split { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 1100px) { .st-split { grid-template-columns: 1.55fr 1fr; align-items: start; } }
+
+.st-split-even { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .st-split-even { grid-template-columns: 1fr 1fr; } }
+
+/* Dropzone (upload) */
+.dropzone {
+  border: 1.5px dashed var(--hairline-2);
+  border-radius: 16px;
+  padding: 44px 24px;
+  text-align: center;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--brand-gradient) border-box;
+  border: 1.5px dashed transparent;
+  background:
+    repeating-linear-gradient(var(--surface-2), var(--surface-2));
+  transition: background 0.18s ease, transform 0.18s ease;
+  cursor: pointer;
+}
+.dropzone:hover { background: var(--surface-3); }
+.dropzone.drag { transform: scale(1.005); background: var(--surface-3); }
+
+/* Data table rows */
+.st-row {
+  display: grid; align-items: center; gap: 14px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--hairline);
+  transition: background 0.14s ease;
+}
+.st-row:hover { background: var(--surface-2); }
+.st-row.head {
+  border-top: none;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-4);
+}
+.st-row.head:hover { background: transparent; }
+
+/* Activity ledger row (money-in) */
+.act-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 10px;
+  animation: ledgerIn 0.4s ease-out;
+}
+.act-row:hover { background: var(--surface-2); }
+.act-ico {
+  width: 34px; height: 34px; border-radius: 10px; flex: 0 0 34px;
+  display: inline-flex; align-items: center; justify-content: center; color: white;
+}
+
+/* Tier editor card */
+.tier-edit {
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.tier-edit.popular {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--brand-gradient) border-box;
+}
+
+/* Stream preview (fake video surface) */
+.stream-preview {
+  position: relative; border-radius: 16px; overflow: hidden;
+  aspect-ratio: 16/9;
+  background:
+    radial-gradient(120% 120% at 30% 20%, rgba(139,92,246,0.4), transparent 55%),
+    radial-gradient(120% 120% at 80% 90%, rgba(6,182,212,0.35), transparent 55%),
+    #0a0a12;
+  display: flex; align-items: center; justify-content: center;
+}
+.stream-preview .bars {
+  position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; gap: 5px; padding: 22%;
+  opacity: 0.5;
+}
+.stream-preview .bars span {
+  width: 6px; border-radius: 4px; background: rgba(255,255,255,0.7);
+  animation: eq 1.1s ease-in-out infinite;
+}
+@keyframes eq { 0%,100% { height: 18%; } 50% { height: 80%; } }
+
+/* Copy field (stream key, etc.) */
+.copy-field {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--hairline);
+  font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-2);
+}
+.copy-field .val { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.02em; }
+
+/* Field / input */
+.st-input {
+  width: 100%; padding: 11px 13px; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--hairline);
+  color: var(--ink-1); font-size: 13.5px; font-weight: 500;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.st-input:focus { outline: none; border-color: var(--hairline-2); background: var(--surface-3); }
+.st-input::placeholder { color: var(--ink-4); }
+.st-label { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 7px; display: block; }
+
+/* Studio sidebar mode switch button */
+.mode-switch {
+  margin: 8px 12px; padding: 12px 14px;
+  border-radius: 12px;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--brand-gradient) border-box;
+  border: 1.5px solid transparent;
+  display: flex; align-items: center; gap: 11px;
+  width: calc(100% - 24px); text-align: left;
+  transition: transform 0.14s ease, box-shadow 0.18s ease;
+}
+.mode-switch:hover { transform: translateY(-1px); box-shadow: 0 0 24px -6px rgba(139,92,246,0.5); }
+
+/* Donut center */
+.donut-wrap { position: relative; width: 168px; height: 168px; }
+.donut-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+}
+
+/* Legend dot */
+.legdot { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 9px; }
+
+/* Progress meter */
+.meter { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.meter > span { display: block; height: 100%; border-radius: 999px; }
+
+/* Empty / hint blocks */
+.st-hint {
+  border: 1px dashed var(--hairline-2); border-radius: 12px;
+  padding: 16px; color: var(--ink-3); font-size: 12.5px; line-height: 1.6;
+  background: var(--surface-2);
+}
