@@ -8,6 +8,7 @@ import { buildMetadata, clampDescription } from "@/lib/seo/meta";
 import { person, breadcrumb, product } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { ChannelHeader, TierCard, VideoCard } from "@/components/public/cards";
+import { SupportBar } from "@/components/SupportBar";
 import { formatCast, formatFiat } from "@/lib/cast";
 
 export const revalidate = 60;
@@ -71,6 +72,25 @@ export default async function ChannelPage({ params }: Props) {
           </span>
         </Link>
       )}
+
+      <div style={{ marginBottom: 28 }}>
+        <SupportBar
+          channelId={channel.id}
+          tiers={channel.tiers.map((t) => ({
+            id: t.id,
+            name: t.name,
+            priceCast: t.priceCast,
+            perks: t.perks,
+            popular: t.popular ?? false,
+          }))}
+          products={channel.products.map((p) => ({
+            id: p.id,
+            name: p.name,
+            priceCast: p.priceCast,
+            kind: p.kind,
+          }))}
+        />
+      </div>
 
       <section style={{ marginBottom: 40 }}>
         <h2 className="lower" style={{ fontSize: 20, marginBottom: 16 }}>library</h2>

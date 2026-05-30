@@ -201,9 +201,24 @@ model User {
   paymentMethods PaymentMethod[]
   memberships    Membership[]
   consentGrants  ConsentGrant[]
+  follows        Follow[]
 
   @@index([status])
   @@index([kyc])
+}
+
+/// Follow — a fan following a channel (v1 scope; powers /following + go-live alerts).
+model Follow {
+  id        String   @id @default(cuid())
+  userId    String
+  channelId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  channel Channel @relation(fields: [channelId], references: [id])
+
+  @@unique([userId, channelId])
+  @@index([channelId])
 }
 
 /// Creator — prototype: CREATORS. Owns a Channel.
@@ -246,6 +261,7 @@ model Channel {
   products         Product[]
   memberships      Membership[]
   scheduledStreams ScheduledStream[]
+  followers        Follow[]
 }
 
 /// Video — prototype: STUDIO.CONTENT, NYX_LIBRARY

@@ -8,6 +8,27 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: technotainment
+          POSTGRES_PASSWORD: technotainment
+          POSTGRES_DB: technotainment
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U technotainment"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://technotainment:technotainment@localhost:5432/technotainment
+      APP_URL: https://technotainment.fm
+      LAUNCH_MODE: dev
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,6 +43,9 @@ jobs:
       - name: prisma generate
         run: npx prisma generate
 
+      - name: db migrate
+        run: npx prisma migrate deploy
+
       - name: typecheck
         run: npm run typecheck
 
@@ -29,14 +53,8 @@ jobs:
         run: npm run lint
 
       - name: test
+        # Integration tests run against the postgres service; pure tests always run.
         run: npm test
 
       - name: build
         run: npm run build
-        env:
-          # Build must succeed on mocks with no real provider keys (mock-first).
-          LAUNCH_MODE: dev
-          # Dummy values so module imports (Prisma client, canonical URLs) resolve at build.
-          # No DB connection is made during the build (public pages are ISR/SSR, not prerendered).
-          DATABASE_URL: postgresql://build:build@localhost:5432/build
-          APP_URL: https://technotainment.fm

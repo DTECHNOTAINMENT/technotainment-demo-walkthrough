@@ -9,6 +9,7 @@ import { buildMetadata, clampDescription, ogImage } from "@/lib/seo/meta";
 import { videoObject, breadcrumb } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { SupportBar } from "@/components/SupportBar";
 import { video as videoProvider } from "@/lib/integrations";
 import { formatCast } from "@/lib/cast";
 
@@ -121,6 +122,10 @@ export default async function WatchPage({ params }: Props) {
         <span className="lower">{creator.handle}</span>
         <span>·</span>
         <span className="tnum lower">{formatCast(video.views)} views</span>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <SupportBar channelId={video.channel.id} tiers={[]} compact />
       </div>
 
       {video.description && (

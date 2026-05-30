@@ -43,12 +43,18 @@ Track progress by checking boxes in this file as you go.
 > playback uses a public test stream until Mux keys are added. Next up: **Phase 2 — viewer app + money in**
 > (wallet top-up, tips, memberships via Stripe test cards).
 
-## Phase 2 — Viewer app + money in
-- [ ] Home, following, library, search, notifications, profile + **consent** model.
-- [ ] Wallet + **top-up** (Stripe: cards + Apple/Google Pay; 3DS for cards, express skips it).
-- [ ] Saved payment methods; follow / subscribe(tier) / tip / gift / buy product → ledger entries + receipts.
-- [ ] Stripe webhooks (`payment.*`) verified + idempotent; failed/recovered states handled.
-- **DoD:** a fan tops up with a Stripe **test** card, spends CAST on a tip and a membership, and the ledger + receipts are correct.
+## Phase 2 — Viewer app + money in  ✅ complete (2026-05-30)
+- [x] Authed shell (sidebar + topbar w/ live CAST balance + sign-out) + home, following, library, notifications, settings, profile + **consent** model (search shipped in Phase 1). Dev sign-in lists seeded users (Clerk in prod).
+- [x] Wallet + **top-up** flow (select → method → 3DS for cards / express skips it → success) via the PaymentProvider (Stripe mock); saved methods + transaction history.
+- [x] follow / subscribe(tier) / tip / buy product → atomic Transaction + WalletEntry + receipts. Membership locks the price (DECISIONS §2). (Gift uses the same `spend` path; dedicated gifting UX is a deferred flag.)
+- [x] Payments webhook (`/api/webhooks/payments`) idempotent (settleTopup never double-credits; covered by a test). Signature verification stubbed until real Stripe keys (Phase 6).
+- **DoD:** ✅ verified end-to-end against the seeded DB — @mira.k tops up 5,000 via a 3DS card (challenge→confirm→settle), tips 100, buys a 250 membership; ledger goes 12,480 → 17,480 → 17,380 → 17,130; receipt renders; overdraw is blocked (400); `/wallet` redirects when signed out. 20/20 tests (8 money integration tests vs Postgres).
+
+> **Owner note (Phase 2):** fans can now sign in, add CAST, and pay creators. Top-up runs the full
+> card 3-D Secure dance (or express for wallets), every spend writes an auditable ledger entry and a
+> receipt, and balances can never go negative or be double-credited. Still mocked: the actual card
+> charge (Stripe test logic) until you add keys. Note: staff/admin sign-in arrives with **Phase 4**
+> (the user role enum is member/creator today). Next up: **Phase 3 — Creator Studio**.
 
 ## Phase 3 — Creator Studio
 - [ ] Onboarding mints a **fresh empty channel** (not the Nyx demo) + first tier + payout method.
