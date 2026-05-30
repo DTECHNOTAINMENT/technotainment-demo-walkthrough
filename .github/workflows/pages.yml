@@ -4,8 +4,6 @@ name: deploy-prototype-pages
 # visual preview. `enablement: true` turns Pages on via the API, so no manual repo setting
 # is needed. Runs on this build branch + main + manual dispatch.
 on:
-  push:
-    branches: [main, claude/busy-euler-zADks]
   workflow_dispatch:
 
 permissions:
