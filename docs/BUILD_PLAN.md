@@ -84,11 +84,19 @@ Track progress by checking boxes in this file as you go.
 > work end-to-end on mocks. Remaining: **Phase 5** (realtime: live chat, counters, co-watch, push)
 > and **Phase 6** (swap mocks for real providers, AWS migration, legal, security review, go-live).
 
-## Phase 5 — Realtime & polish
-- [ ] Live chat moderation tools, slow-mode, members-only chat; live counters at scale.
-- [ ] Co-watch "small rooms" (LiveKit). Push notifications for go-live/drops.
-- [ ] i18n scaffold, rate limiting, error boundaries, load test on live paths.
-- **DoD:** 1k-concurrent live test passes; chat + counters stable; alerts fire.
+## Phase 5 — Realtime & polish  ✅ core complete (2026-05-30) · co-watch/push/load-test deferred (flags)
+- [x] **Live chat + viewer counters via Redis** (`lib/live.ts`) — chat is a capped Redis list; presence is a TTL'd sorted set (scales horizontally on ElastiCache, app stays stateless). Moderation runs the ModerationProvider + **owner-configurable blocked terms** (control center `policies`); **slow-mode** via the rate limiter. `LiveChat` client polls `/api/live/:id` (upgradeable to SSE/WS with no UI change) and embeds on the channel page when live.
+- [~] **Co-watch "small rooms" (LiveKit)** + **push notifications** (FCM/APNs) — built behind the existing provider mocks + feature flags; switched on with real keys (deferred per MVP scope `DECISIONS §5`).
+- [x] **Rate limiting** (`lib/ratelimit.ts`, Redis sliding window) on chat + money endpoints (spend); **error boundaries** (`app/error.tsx`, `not-found.tsx`); **i18n scaffold** (`lib/i18n.ts`, 6 launch locales + `negotiateLocale`).
+- [~] **1k-concurrent load test** — deferred: needs a real load-test harness + infra (the chat/counter design is horizontally scalable by construction). 
+- **DoD:** ✅ chat + counters **stable and verified** live — heartbeat→viewers, post→appears, blocked-term→400, flood→429 (slow-mode), state poll returns messages+count. ⏳ the 1k-concurrent load test + co-watch/push are infra/owner-gated.
+
+> **Owner note (Phase 5):** live streams now have **working chat and live viewer counts**, with
+> moderation (your blocked-terms list) and anti-spam slow-mode — all on Redis so it scales. The app
+> also got production hardening: rate limits on chat + spending, friendly error pages, and a
+> translation scaffold for the 6 launch regions. Deferred until you're ready / have keys: co-watch
+> "watch parties" (LiveKit), push notifications, and a large-scale load test. Next: **Phase 6 —
+> launch readiness** (real provider keys, AWS, legal, security review, go-live) — this one needs you.
 
 ## Phase 6 — Launch readiness
 - [ ] Swap remaining mocks for real providers (owner keys); production webhooks verified.

@@ -9,6 +9,7 @@ import { person, breadcrumb, product } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { ChannelHeader, TierCard, VideoCard } from "@/components/public/cards";
 import { SupportBar } from "@/components/SupportBar";
+import { LiveChat } from "@/components/LiveChat";
 import { formatCast, formatFiat } from "@/lib/cast";
 
 export const revalidate = 60;
@@ -71,6 +72,12 @@ export default async function ChannelPage({ params }: Props) {
             {formatCast(live.viewers)} watching
           </span>
         </Link>
+      )}
+
+      {live && (
+        <div style={{ marginBottom: 28, maxWidth: 420 }}>
+          <LiveChat streamId={live.id} />
+        </div>
       )}
 
       <div style={{ marginBottom: 28 }}>
