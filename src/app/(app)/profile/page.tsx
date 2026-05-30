@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { consentFor } from "@/lib/queries/viewer";
 import { balanceOf } from "@/lib/money";
 import { formatCast } from "@/lib/cast";
 import { ConsentToggles, type ConsentRow } from "@/components/app/ConsentToggles";
+import { Icon } from "@/components/ui/Icon";
 
 export const metadata: Metadata = { title: "profile", robots: { index: false } };
 
@@ -27,14 +29,16 @@ export default async function ProfilePage() {
   }));
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 22 }}>
+    <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", flexDirection: "column", gap: 22 }}>
       {/* header */}
       <div
         className="card"
         style={{ padding: 24, background: "var(--surface)", display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}
       >
-        <span className="av-ring" style={{ flex: "0 0 auto" }}>
-          <span style={{ display: "block", width: 72, height: 72, borderRadius: "50%", background: "var(--brand-gradient)" }} />
+        <span style={{ padding: 3, borderRadius: "50%", background: "var(--brand-gradient)", flex: "0 0 auto", animation: "ringHue 8s linear infinite" }}>
+          <span style={{ display: "block", padding: 3, borderRadius: "50%", background: "var(--surface)" }}>
+            <span style={{ display: "block", width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg,#0a0a0a,#3a3a3a)" }} />
+          </span>
         </span>
         <div style={{ flex: 1, minWidth: 220 }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: "-0.01em" }}>{session.displayName}</h1>
@@ -43,22 +47,22 @@ export default async function ProfilePage() {
           </div>
           <div style={{ marginTop: 10, display: "flex", gap: 20, flexWrap: "wrap", alignItems: "baseline" }}>
             <div>
-              <span className="stat-num brand-grad-text tnum" style={{ fontSize: 18 }}>
-                {formatCast(balance)}
-              </span>{" "}
-              <span className="lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>
-                CAST balance
-              </span>
+              <span className="stat-num tnum" style={{ fontSize: 18 }}>{rows.length}</span>{" "}
+              <span className="lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>creators with consent</span>
             </div>
             <div>
-              <span className="stat-num tnum" style={{ fontSize: 18 }}>
-                {rows.length}
-              </span>{" "}
-              <span className="lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>
-                creators with consent
-              </span>
+              <span className="stat-num brand-grad-text tnum" style={{ fontSize: 18 }}>{formatCast(balance)}</span>{" "}
+              <span className="lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>CAST</span>
             </div>
           </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link href="/wallet" className="btn btn-glass lower" style={{ padding: "10px 16px", fontSize: 13 }}>
+            <Icon name="wallet" size={14} /> open wallet
+          </Link>
+          <Link href="/settings" className="btn btn-grad-stroke lower" style={{ padding: "10px 16px", fontSize: 13 }}>
+            <Icon name="settings" size={14} stroke={2.2} /> settings
+          </Link>
         </div>
       </div>
 
@@ -95,6 +99,7 @@ export default async function ProfilePage() {
           <div className="lower" style={{ fontWeight: 800, fontSize: 15 }}>
             per-creator consent · <span className="tnum">{rows.length}</span>
           </div>
+          <span style={{ fontSize: 11, color: "var(--ink-3)" }}>tap a row to expand</span>
         </div>
         <ConsentToggles rows={rows} />
       </div>

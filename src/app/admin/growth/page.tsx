@@ -1,162 +1,283 @@
 /**
- * /admin/growth — SEO & discovery surface. This is informative: the real SEO work (SSR,
- * schema.org, sitemaps, canonical/OG) is implemented in the web app; this page links to the
- * live artifacts (sitemaps, robots) and surfaces the metadata defaults read from branding.
- * Search Console itself is a mock connector (see /admin/connectors), so the numbers it would
- * report back are illustrative.
+ * /admin/growth — SEO & discovery. KPI cards (organic clicks/impressions/position/index),
+ * an organic-clicks chart, top queries + landing pages, the live sitemaps/robots artifacts,
+ * structured-data coverage, the technical checklist and the metadata defaults read from branding.
+ * The real SEO work (SSR, schema.org, sitemaps, OG) is implemented in the web app; Search Console
+ * is wired as a mock connector, so the reported figures are illustrative.
+ * Spec: prototype/v4/admin-growth.jsx.
  */
 import { branding } from "@/lib/config";
-import { AxPageHead, AxCard, AxRow, AxPill, AxHint, AX_PAGE } from "@/components/admin-x/AxPrimitives";
+import { StatCard, StudioCard, StudioPageHead, Pill, Meter, Bars, formatCast, type PillTone } from "@/components/studio-ui";
+import { Icon } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
 
-const SITEMAPS = [
-  { name: "creators.xml", path: "/sitemap/creators.xml", desc: "every public channel · Person/Organization" },
-  { name: "videos.xml", path: "/sitemap/videos.xml", desc: "watch pages · VideoObject + key moments" },
-  { name: "clips.xml", path: "/sitemap/clips.xml", desc: "short clips · VideoObject clip" },
-  { name: "categories.xml", path: "/sitemap/categories.xml", desc: "explore hubs · programmatic SEO" },
-];
+const MONTHS = ["jun", "jul", "aug", "sep", "oct", "nov", "dec", "jan", "feb", "mar", "apr", "may"];
+const CLICKS = [128, 142, 161, 188, 204, 241, 286, 312, 358, 402, 451, 512].map((k) => k * 1000);
+const IMPRESSIONS = [4.1, 4.6, 5.2, 6.1, 6.8, 7.9, 9.2, 10.1, 11.4, 12.8, 14.2, 16.1].map((v) => Math.round(v * 1e6));
+const INDEXED = 184200;
+const SUBMITTED = 192400;
+const ERRORS = 1240;
 
+const TYPE_TONE: Record<string, PillTone> = { channel: "info", video: "ok", category: "warn", clip: "info", index: "neutral" };
+
+const TOP_QUERIES = [
+  { q: "modular synth live stream", clicks: 18400, impr: 412000, pos: 2.1 },
+  { q: "nyx okafor buchla", clicks: 12100, impr: 88000, pos: 1.4 },
+  { q: "ambient music live", clicks: 9800, impr: 640000, pos: 6.8 },
+  { q: "watch live cooking", clicks: 7200, impr: 980000, pos: 9.2 },
+  { q: "patch sheet download", clicks: 4100, impr: 52000, pos: 3.0 },
+];
+const TOP_PAGES = [
+  { url: "/c/nyxsynth", clicks: 41200, type: "channel" },
+  { url: "/watch/night-session-13", clicks: 28800, type: "video" },
+  { url: "/explore/modular-synth", clicks: 19400, type: "category" },
+  { url: "/clip/the-bass-thing", clicks: 16100, type: "clip" },
+  { url: "/live", clicks: 12400, type: "index" },
+];
+const SITEMAPS = [
+  { name: "creators.xml", path: "/sitemap/creators.xml", urls: 9840, indexed: "98%" },
+  { name: "videos.xml", path: "/sitemap/videos.xml", urls: 142800, indexed: "94%" },
+  { name: "clips.xml", path: "/sitemap/clips.xml", urls: 38200, indexed: "91%" },
+  { name: "categories.xml", path: "/sitemap/categories.xml", urls: 64, indexed: "100%" },
+];
+const SCHEMA: Array<[string, number]> = [
+  ["VideoObject", 142800],
+  ["BroadcastEvent (live)", 1284],
+  ["Person / Organization", 9840],
+  ["Product (drops)", 4120],
+  ["BreadcrumbList", 192400],
+];
 const TECHNICAL: Array<[string, boolean]> = [
-  ["server-side rendering (Next.js app router)", true],
+  ["server-side rendering (Next.js)", true],
   ["canonical URLs", true],
-  ["open graph + twitter cards", true],
+  ["Open Graph + Twitter cards", true],
   ["dynamic og-image per video & creator", true],
-  ["schema.org JSON-LD (VideoObject, BroadcastEvent, Person)", true],
   ["video sitemap + key moments", true],
   ["robots.txt + crawl budget", true],
   ["hreflang (multi-region)", false],
   ["llms.txt (AI discovery)", false],
 ];
 
-const SCHEMA_COVERAGE: Array<[string, string]> = [
-  ["VideoObject", "every /watch and /clip page"],
-  ["BroadcastEvent", "live streams while on air"],
-  ["Person / Organization", "every /c/:handle channel"],
-  ["Product", "store drops & tickets"],
-  ["BreadcrumbList", "explore + category hubs"],
-];
-
 export default async function AdminGrowthPage() {
   return (
-    <div style={AX_PAGE}>
-      <AxPageHead
+    <div className="page-pad" style={{ maxWidth: 1450, margin: "0 auto" }}>
+      <StudioPageHead
         eyebrow="growth"
         title="seo & discovery"
-        sub="how Technotainment shows up in search and social — the live sitemaps, robots policy, schema coverage and the metadata defaults applied across every public page."
+        sub="how technotainment shows up in search and social — index health, rankings and the technical SEO surface implemented in the web app."
       />
 
-      <AxHint>
-        the SEO engine (SSR, schema.org markup, sitemaps and core web vitals) is implemented in the web app. this console links
-        to the live artifacts and surfaces the data search console reports back — search console is wired as a mock connector
-        (see connectors), so the reported figures are illustrative.
-      </AxHint>
+      <div className="kpi-grid">
+        <StatCard
+          label="organic clicks · mo"
+          icon="trend"
+          value={formatCast(CLICKS[CLICKS.length - 1])}
+          unit="from search"
+          delta="+13.5%"
+          deltaUp
+          fiat="38% of new signups"
+          spark={CLICKS.slice(-8)}
+          sparkColor="#10b981"
+        />
+        <StatCard
+          label="impressions"
+          icon="eye"
+          value={formatCast(IMPRESSIONS[IMPRESSIONS.length - 1])}
+          unit="in search"
+          delta="+13%"
+          deltaUp
+          fiat="3.2% CTR"
+          spark={IMPRESSIONS.slice(-8)}
+          sparkColor="#06b6d4"
+        />
+        <StatCard
+          label="avg. position"
+          icon="grid"
+          value="8.4"
+          unit="ranking"
+          delta="−1.2"
+          deltaUp
+          fiat="lower is better"
+          spark={[11, 10.5, 10, 9.6, 9.2, 8.9, 8.6, 8.4]}
+          sparkColor="#8b5cf6"
+        />
+        <StatCard
+          label="indexed pages"
+          icon="check"
+          value={formatCast(INDEXED)}
+          unit="indexed"
+          delta="96%"
+          deltaUp
+          fiat={`${formatCast(SUBMITTED)} submitted`}
+          spark={[160, 165, 170, 174, 178, 180, 182, 184]}
+          sparkColor="#f59e0b"
+        />
+      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 16, marginTop: 16, alignItems: "start" }}>
-        {/* sitemaps + robots */}
+      <div className="st-split" style={{ marginTop: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <AxCard title="sitemaps" sub="auto-generated · pinged to search engines on publish" pad={false}>
-            {SITEMAPS.map((s, i) => (
-              <AxRow key={s.path} cols="1fr auto" first={i === 0}>
-                <div style={{ minWidth: 0 }}>
-                  <a
-                    href={s.path}
-                    className="mono"
-                    style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-1)" }}
-                  >
-                    {s.path}
-                  </a>
-                  <div className="lower" style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 3 }}>
-                    {s.desc}
-                  </div>
-                </div>
-                <AxPill tone="ok">live</AxPill>
-              </AxRow>
-            ))}
-            <div style={{ padding: "12px 18px", borderTop: "1px solid var(--hairline)" }}>
-              <a href="/robots.txt" className="mono" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink-2)" }}>
-                /robots.txt
-              </a>
-              <span className="lower" style={{ fontSize: 12, color: "var(--ink-4)" }}>
-                {" "}· allows crawl, points to the sitemap index
-              </span>
-            </div>
-          </AxCard>
+          <StudioCard title="organic clicks · 12 months" sub="visits from search engines">
+            <Bars data={CLICKS} labels={MONTHS} h={180} fmt={(v) => formatCast(v)} />
+          </StudioCard>
 
-          <AxCard title="structured data" sub="schema.org coverage of public pages" pad={false}>
-            {SCHEMA_COVERAGE.map(([type, where], i) => (
-              <AxRow key={type} cols="1fr auto" first={i === 0}>
-                <span className="mono" style={{ fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "#10b981", fontWeight: 900 }}>✓</span> {type}
+          <StudioCard title="top search queries" sub="what people search to find you" pad={false}>
+            <div className="st-row head" style={{ gridTemplateColumns: "1fr 90px 90px 70px" }}>
+              <span>query</span>
+              <span style={{ textAlign: "right" }}>clicks</span>
+              <span style={{ textAlign: "right" }}>impr.</span>
+              <span style={{ textAlign: "right" }}>pos.</span>
+            </div>
+            {TOP_QUERIES.map((q) => (
+              <div key={q.q} className="st-row" style={{ gridTemplateColumns: "1fr 90px 90px 70px" }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{q.q}</span>
+                <span className="tnum" style={{ textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                  {formatCast(q.clicks)}
                 </span>
-                <span className="lower" style={{ fontSize: 11.5, color: "var(--ink-3)" }}>
-                  {where}
+                <span className="tnum" style={{ textAlign: "right", fontSize: 12.5, color: "var(--ink-3)" }}>
+                  {formatCast(q.impr)}
                 </span>
-              </AxRow>
+                <span
+                  className="tnum"
+                  style={{ textAlign: "right", fontSize: 12.5, fontWeight: 700, color: q.pos <= 3 ? "#10b981" : "var(--ink-2)" }}
+                >
+                  {q.pos}
+                </span>
+              </div>
             ))}
-          </AxCard>
+          </StudioCard>
+
+          <StudioCard title="metadata defaults" sub={`templates applied across ${branding.appName}`}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label className="st-label">title template</label>
+                <input className="st-input mono" defaultValue={`{title} · {creator} | ${branding.appName}`} readOnly />
+              </div>
+              <div>
+                <label className="st-label">description template</label>
+                <input className="st-input mono" defaultValue={`{summary} — watch on ${branding.companyName}`} readOnly />
+              </div>
+              <div>
+                <label className="st-label">og image</label>
+                <input className="st-input mono" defaultValue="/api/og?title={title}&creator={handle}" readOnly />
+              </div>
+            </div>
+            <div className="st-hint" style={{ marginTop: 14 }}>
+              these defaults come from branding in the control center — change them there and every public page&apos;s
+              &lt;head&gt; updates at runtime, no deploy.
+            </div>
+          </StudioCard>
         </div>
 
-        {/* technical + metadata defaults */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <AxCard title="technical checklist" sub="SSR / crawlability health" pad={false}>
+          <StudioCard title="top landing pages" sub="entry points from search" pad={false}>
+            {TOP_PAGES.map((p, i) => (
+              <div
+                key={p.url}
+                className="st-row"
+                style={{ gridTemplateColumns: "1fr auto", borderTop: i ? "1px solid var(--hairline)" : "none" }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    className="mono"
+                    style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    {p.url}
+                  </div>
+                  <div style={{ marginTop: 3 }}>
+                    <Pill tone={TYPE_TONE[p.type] ?? "neutral"}>{p.type}</Pill>
+                  </div>
+                </div>
+                <span className="tnum" style={{ fontSize: 13, fontWeight: 700 }}>
+                  {formatCast(p.clicks)}
+                </span>
+              </div>
+            ))}
+          </StudioCard>
+
+          <StudioCard title="sitemaps & index" sub="auto-generated · pinged to search engines on publish" pad={false}>
+            <div className="st-row head" style={{ gridTemplateColumns: "1fr 100px 80px" }}>
+              <span>sitemap</span>
+              <span style={{ textAlign: "right" }}>urls</span>
+              <span style={{ textAlign: "right" }}>indexed</span>
+            </div>
+            {SITEMAPS.map((s, i) => (
+              <div key={s.name} className="st-row" style={{ gridTemplateColumns: "1fr 100px 80px", borderTop: i ? "1px solid var(--hairline)" : "none" }}>
+                <a className="mono" href={s.path} style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-1)", textDecoration: "none" }}>
+                  {s.name}
+                </a>
+                <span className="tnum" style={{ textAlign: "right", fontSize: 13 }}>
+                  {formatCast(s.urls)}
+                </span>
+                <span className="tnum" style={{ textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                  {s.indexed}
+                </span>
+              </div>
+            ))}
+            <div style={{ padding: "16px 18px", borderTop: "1px solid var(--hairline)" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+                <span className="brand-grad-text tnum stat-num" style={{ fontSize: 28 }}>
+                  {formatCast(INDEXED)}
+                </span>
+                <span className="lower" style={{ color: "var(--ink-3)", fontSize: 12.5 }}>
+                  / {formatCast(SUBMITTED)} submitted
+                </span>
+              </div>
+              <Meter value={INDEXED / SUBMITTED} style={{ height: 10 }} />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 12 }}>
+                <span className="tnum" style={{ color: "#10b981", fontWeight: 700 }}>
+                  {formatCast(INDEXED)} indexed
+                </span>
+                <span className="tnum" style={{ color: "#ef4444", fontWeight: 700 }}>
+                  {formatCast(ERRORS)} errors / excluded
+                </span>
+              </div>
+              <a className="mono" href="/robots.txt" style={{ display: "inline-block", marginTop: 12, fontSize: 12, color: "var(--ink-2)", textDecoration: "none" }}>
+                /robots.txt
+              </a>
+            </div>
+          </StudioCard>
+
+          <StudioCard title="technical & structured data" sub="SSR / crawlability + schema.org coverage" pad={false}>
             {TECHNICAL.map(([label, ok], i) => (
-              <AxRow key={label} cols="1fr auto" first={i === 0}>
-                <span style={{ fontSize: 12.5 }}>{label}</span>
+              <div
+                key={label}
+                className="st-row"
+                style={{ gridTemplateColumns: "1fr auto", borderTop: i ? "1px solid var(--hairline)" : "none" }}
+              >
+                <span style={{ fontSize: 13 }}>{label}</span>
                 {ok ? (
-                  <span style={{ color: "#10b981", fontWeight: 900 }}>✓</span>
+                  <Icon name="check" size={16} stroke={2.6} style={{ color: "#10b981" }} />
                 ) : (
                   <span className="lower" style={{ fontSize: 11, color: "var(--ink-4)", fontWeight: 700 }}>
                     planned
                   </span>
                 )}
-              </AxRow>
+              </div>
             ))}
-          </AxCard>
-
-          <AxCard title="metadata defaults" sub={`templates applied across ${branding.appName}`}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <MetaRow label="title template" value={`{title} · {creator} | ${branding.appName}`} />
-              <MetaRow label="description template" value={`{summary} — watch on ${branding.companyName}`} />
-              <MetaRow label="brand" value={`${branding.companyName} · ${branding.appName}`} />
-              <MetaRow label="default tagline" value={branding.tagline} />
-              <MetaRow label="og image" value="/api/og?title={title}&creator={handle}" />
+            <div style={{ padding: "12px 18px", borderTop: "1px solid var(--hairline)" }}>
+              {SCHEMA.map(([k, n]) => (
+                <div
+                  key={k}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 0",
+                  }}
+                >
+                  <span style={{ fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 7 }}>
+                    <Icon name="check" size={13} stroke={2.6} style={{ color: "#10b981" }} />{" "}
+                    <span className="mono">{k}</span>
+                  </span>
+                  <span className="tnum" style={{ fontSize: 12.5, color: "var(--ink-3)" }}>
+                    {formatCast(n)} pages
+                  </span>
+                </div>
+              ))}
             </div>
-            <AxHint>
-              <span style={{ marginTop: 4, display: "block" }}>
-                these defaults come from branding in the control center — change them there and every public page&apos;s
-                {" "}&lt;head&gt; updates at runtime, no deploy.
-              </span>
-            </AxHint>
-          </AxCard>
+          </StudioCard>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function MetaRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div
-        className="lower"
-        style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--ink-4)", marginBottom: 5 }}
-      >
-        {label}
-      </div>
-      <div
-        className="mono"
-        style={{
-          fontSize: 12.5,
-          color: "var(--ink-2)",
-          padding: "9px 11px",
-          borderRadius: 9,
-          background: "var(--surface-2)",
-          border: "1px solid var(--hairline)",
-          wordBreak: "break-all",
-        }}
-      >
-        {value}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@
  */
 import { redirect } from "next/navigation";
 import { requireCreatorChannel } from "@/lib/studio";
-import { SxPageHead, SX_PAGE } from "@/components/studio-x/SxPrimitives";
+import { StudioPageHead } from "@/components/studio-ui";
 import { SxSettings } from "@/components/studio-x/SxSettings";
 
 export const dynamic = "force-dynamic";
@@ -21,8 +21,8 @@ export default async function StudioSettingsPage() {
   }
 
   return (
-    <div style={{ ...SX_PAGE, maxWidth: 1000 }}>
-      <SxPageHead title="settings" sub="your channel identity, brand and bio." />
+    <div className="page-pad" style={{ maxWidth: 1000, margin: "0 auto" }}>
+      <StudioPageHead eyebrow="creator studio" title="settings" sub="your channel identity, brand and bio." />
       <SxSettings
         name={creator.name}
         handle={creator.handle}

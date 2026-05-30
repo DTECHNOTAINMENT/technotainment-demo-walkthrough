@@ -1,8 +1,9 @@
 /**
  * Creator Studio — content library (/studio/content). Server-rendered list of every
- * video in the channel with status (draft / processing / published), visibility, and
- * views, each linking to its editor. Upload is a client button (StUploadButton) that
- * POSTs /api/studio/videos and routes to the new editor. Mirrors studio-content.jsx.
+ * video in the channel ported to match prototype/v4/studio-content.jsx: a thumbnailed
+ * `.st-row` table with a processing overlay, visibility + status pills, views and CAST
+ * columns, each row linking to its editor. Upload is a client button (StUploadButton)
+ * that POSTs /api/studio/videos and routes to the new editor.
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -10,39 +11,27 @@ import { requireCreatorChannel } from "@/lib/studio";
 import { listContent } from "@/lib/queries/studio";
 import { formatCast } from "@/lib/cast";
 import { StUploadButton } from "@/components/studio/StUploadButton";
+import { StudioCard, StudioPageHead, Pill, type PillTone } from "@/components/studio-ui";
 
-const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
-  published: { bg: "rgba(16,185,129,0.12)", fg: "#10b981" },
-  processing: { bg: "rgba(245,158,11,0.14)", fg: "#f59e0b" },
-  draft: { bg: "var(--surface-2)", fg: "var(--ink-2)" },
+const STATUS_TONE: Record<string, PillTone> = {
+  published: "ok",
+  processing: "warn",
+  draft: "neutral",
 };
-const VIS_TONE: Record<string, { bg: string; fg: string }> = {
-  public: { bg: "var(--surface-2)", fg: "var(--ink-2)" },
-  members: { bg: "rgba(139,92,246,0.14)", fg: "#a78bfa" },
-  ppv: { bg: "rgba(245,158,11,0.14)", fg: "#f59e0b" },
+const VIS_TONE: Record<string, PillTone> = {
+  public: "neutral",
+  members: "info",
+  ppv: "warn",
 };
 
-function Pill({ tone, children }: { tone: { bg: string; fg: string }; children: string }) {
-  return (
-    <span
-      className="lower"
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "3px 9px",
-        borderRadius: 999,
-        fontSize: 10.5,
-        fontWeight: 800,
-        letterSpacing: "0.04em",
-        textTransform: "uppercase",
-        background: tone.bg,
-        color: tone.fg,
-        border: "1px solid var(--hairline)",
-      }}
-    >
-      {children}
-    </span>
-  );
+function fmtDate(d: Date): string {
+  return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+function fmtDuration(sec: number): string {
+  if (!sec) return "—";
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 export default async function StudioContentPage() {
@@ -55,42 +44,22 @@ export default async function StudioContentPage() {
   }
 
   const videos = await listContent(channelId);
+  const ROW = "104px 1fr 110px 90px 110px";
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 24px 80px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16, marginBottom: 22 }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-3)", marginBottom: 7 }}>
-            creator studio
-          </div>
-          <h1 className="lower" style={{ margin: 0, fontSize: "clamp(26px, 3vw, 34px)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.05 }}>
-            content
-          </h1>
-          <div style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 6 }}>every upload and recording in one place.</div>
-        </div>
-        <StUploadButton />
-      </div>
+    <div className="page-pad" style={{ maxWidth: 1300, margin: "0 auto" }}>
+      <StudioPageHead
+        eyebrow="creator studio"
+        title="content"
+        sub="every upload, recording and scheduled stream in one place."
+        actions={<StUploadButton />}
+      />
 
-      <section className="card" style={{ background: "var(--surface)", overflow: "hidden" }}>
-        {/* header row */}
-        <div
-          className="lower"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) 110px 110px 90px 90px",
-            gap: 12,
-            padding: "12px 18px",
-            borderBottom: "1px solid var(--hairline)",
-            fontSize: 10.5,
-            fontWeight: 800,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--ink-4)",
-          }}
-        >
+      <StudioCard pad={false}>
+        <div className="st-row head" style={{ gridTemplateColumns: ROW }}>
+          <span>video</span>
           <span>title</span>
           <span>status</span>
-          <span>visibility</span>
           <span style={{ textAlign: "right" }}>views</span>
           <span style={{ textAlign: "right" }}>CAST</span>
         </div>
@@ -100,28 +69,51 @@ export default async function StudioContentPage() {
             <Link
               key={v.id}
               href={`/studio/content/${v.id}`}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1fr) 110px 110px 90px 90px",
-                gap: 12,
-                alignItems: "center",
-                padding: "14px 18px",
-                borderTop: "1px solid var(--hairline)",
-                textDecoration: "none",
-                color: "var(--ink-1)",
-              }}
+              className="st-row"
+              style={{ gridTemplateColumns: ROW, cursor: "pointer", textDecoration: "none", color: "var(--ink-1)" }}
             >
+              <div
+                className="thumb"
+                style={{
+                  backgroundImage: v.thumbUrl ? `url(${v.thumbUrl})` : undefined,
+                  aspectRatio: "16/9",
+                  borderRadius: 8,
+                  position: "relative",
+                }}
+              >
+                {v.status === "processing" && (
+                  <div
+                    className="lower"
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(0,0,0,0.55)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: 10,
+                      fontWeight: 800,
+                    }}
+                  >
+                    processing
+                  </div>
+                )}
+              </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.title}</div>
-                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 3 }}>
-                  /watch/{v.slug}
+                <div style={{ fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {v.title}
+                </div>
+                <div
+                  className="mono"
+                  style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 3, display: "flex", gap: 8, alignItems: "center" }}
+                >
+                  <Pill tone={VIS_TONE[v.visibility] ?? "neutral"}>{v.visibility}</Pill>
+                  {fmtDuration(v.durationSec)} · {fmtDate(v.createdAt)}
                 </div>
               </div>
               <div>
-                <Pill tone={STATUS_TONE[v.status] ?? STATUS_TONE.draft}>{v.status}</Pill>
-              </div>
-              <div>
-                <Pill tone={VIS_TONE[v.visibility] ?? VIS_TONE.public}>{v.visibility}</Pill>
+                <Pill tone={STATUS_TONE[v.status] ?? "neutral"}>{v.status}</Pill>
               </div>
               <div className="tnum" style={{ textAlign: "right", fontSize: 13, fontWeight: 700 }}>
                 {v.views ? formatCast(v.views) : "—"}
@@ -141,7 +133,12 @@ export default async function StudioContentPage() {
             </p>
           </div>
         )}
-      </section>
+      </StudioCard>
+
+      <div className="st-hint" style={{ marginTop: 16 }}>
+        recordings of every stream land in <strong>content</strong> automatically once you end the broadcast — trim,
+        retitle and publish them in the editor.
+      </div>
     </div>
   );
 }

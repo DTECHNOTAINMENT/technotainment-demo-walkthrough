@@ -1,11 +1,12 @@
 /**
- * Admin moderation — the report queue, sorted by severity (listReports already
- * orders severity desc, then newest). Each row shows the target, reason, report
- * count, severity + status pills, and investigate / strike / remove / dismiss
- * actions. Server component. Spec: prototype/v4/admin-moderation.jsx.
+ * Admin moderation — KPI cards + the report queue, highest severity first (listReports
+ * orders severity desc, then newest). Each row shows a type icon, target, reason, report
+ * count, severity + status pills, and investigate / strike / remove / dismiss actions
+ * (AdReportActions → /api/admin/action). Server component. Spec: prototype/v4/admin-moderation.jsx.
  */
 import { listReports } from "@/lib/queries/admin";
-import { AdPageHead, AdCard, AdEmpty, AdPill, adPagePad, type PillTone } from "@/components/admin/AdPrimitives";
+import { StatCard, StudioCard, StudioPageHead, Pill, type PillTone } from "@/components/studio-ui";
+import { Icon } from "@/components/ui/Icon";
 import { AdReportActions } from "@/components/admin/AdReportActions";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +18,15 @@ const STATUS_TONE: Record<string, PillTone> = {
   actioned: "ok",
   dismissed: "neutral",
 };
+const TYPE_ICON: Record<string, string> = {
+  stream: "flame",
+  product: "bag",
+  user: "user",
+  vod: "film",
+  clip: "play",
+};
 
-const COLS = "1.5fr 1fr 80px 100px 100px auto";
+const COLS = "40px 1.5fr 110px 80px 100px auto";
 
 export default async function AdminModerationPage() {
   let reports: Awaited<ReturnType<typeof listReports>> = [];
@@ -30,83 +38,130 @@ export default async function AdminModerationPage() {
   }
 
   const openCount = reports.filter((r) => r.status === "open").length;
+  const highCount = reports.filter((r) => r.severity === "high").length;
 
   return (
-    <div style={adPagePad}>
-      <AdPageHead
+    <div className="page-pad" style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <StudioPageHead
         eyebrow="trust & safety"
         title="moderation"
-        sub="the report queue, highest severity first. investigate, strike, remove or dismiss — every action is audited."
-        actions={!failed ? <AdPill tone={openCount > 0 ? "live" : "ok"}>{openCount} open</AdPill> : undefined}
+        sub="reports, severity triage and enforcement — keep the platform safe and compliant. every action is audited."
       />
 
-      <AdCard>
-        <div
-          className="lower"
-          style={{
-            display: "grid",
-            gridTemplateColumns: COLS,
-            gap: 12,
-            padding: "12px 18px",
-            fontSize: 10.5,
-            fontWeight: 800,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: "var(--ink-4)",
-            borderBottom: "1px solid var(--hairline)",
-            alignItems: "center",
-          }}
-        >
-          <span>target</span>
-          <span>reason</span>
-          <span style={{ textAlign: "right" }}>reports</span>
+      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
+        <StatCard
+          label="open reports"
+          icon="flame"
+          value={String(openCount)}
+          unit="to review"
+          delta={`${highCount} high`}
+          deltaUp={false}
+          fiat="needs attention"
+          spark={[28, 31, 29, 34, 32, 36, 35, openCount || 1]}
+          sparkColor="#ef4444"
+        />
+        <StatCard
+          label="auto-flagged"
+          icon="settings"
+          value="312"
+          unit="last 24h"
+          delta="AI mod"
+          deltaUp
+          fiat="86% precision"
+          spark={[210, 240, 260, 280, 290, 300, 308, 312]}
+          sparkColor="#8b5cf6"
+        />
+        <StatCard
+          label="actions taken"
+          icon="check"
+          value="1,840"
+          unit="this month"
+          delta="+12%"
+          deltaUp
+          fiat="strikes + removals"
+          spark={[1.4, 1.5, 1.6, 1.65, 1.7, 1.78, 1.8, 1.84]}
+          sparkColor="#10b981"
+        />
+        <StatCard
+          label="median response"
+          icon="clock"
+          value="8m"
+          unit="to high sev"
+          delta="−2m"
+          deltaUp
+          fiat="SLA: 15m"
+          spark={[12, 11, 10, 10, 9, 9, 8, 8]}
+          sparkColor="#06b6d4"
+        />
+      </div>
+
+      <StudioCard pad={false} style={{ marginTop: 18 }}>
+        <div className="st-row head" style={{ gridTemplateColumns: COLS }}>
+          <span />
+          <span>target · reason</span>
           <span>severity</span>
+          <span style={{ textAlign: "right" }}>reports</span>
           <span>status</span>
           <span style={{ textAlign: "right" }}>action</span>
         </div>
 
         {failed ? (
-          <AdEmpty>couldn&rsquo;t load the report queue right now. try refreshing.</AdEmpty>
+          <div className="lower" style={{ padding: "32px 18px", textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
+            couldn&rsquo;t load the report queue right now. try refreshing.
+          </div>
         ) : reports.length === 0 ? (
-          <AdEmpty>nothing in the queue — all clear.</AdEmpty>
+          <div className="lower" style={{ padding: "32px 18px", textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
+            nothing in the queue — all clear.
+          </div>
         ) : (
-          reports.map((r, i) => (
-            <div
-              key={r.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: COLS,
-                gap: 12,
-                padding: "14px 18px",
-                alignItems: "center",
-                borderTop: i ? "1px solid var(--hairline)" : "none",
-              }}
-            >
+          reports.map((r) => (
+            <div key={r.id} className="st-row" style={{ gridTemplateColumns: COLS }}>
+              <span
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 9,
+                  background: "var(--surface-2)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--ink-3)",
+                }}
+              >
+                <Icon name={TYPE_ICON[r.targetType] ?? "flame"} size={15} stroke={2} />
+              </span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   {r.targetId}
                 </div>
-                <div className="lower tnum" style={{ fontSize: 11, color: "var(--ink-3)" }}>
-                  {r.id} · {r.targetType}
+                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>
+                  {r.id} · {r.reason}
                 </div>
               </div>
-              <span className="lower" style={{ fontSize: 12.5, color: "var(--ink-2)" }}>
-                {r.reason}
-              </span>
-              <span className="tnum" style={{ textAlign: "right", fontSize: 13, fontWeight: 800 }}>
+              <div>
+                <Pill tone={SEV_TONE[r.severity] ?? "neutral"}>{r.severity}</Pill>
+              </div>
+              <div className="tnum" style={{ textAlign: "right", fontSize: 13, fontWeight: 800 }}>
                 {r.reportCount}
-              </span>
-              <span>
-                <AdPill tone={SEV_TONE[r.severity] ?? "neutral"}>{r.severity}</AdPill>
-              </span>
-              <span>
-                <AdPill tone={STATUS_TONE[r.status] ?? "neutral"}>{r.status}</AdPill>
-              </span>
-              <AdReportActions id={r.id} status={r.status} />
+              </div>
+              <div>
+                <Pill tone={STATUS_TONE[r.status] ?? "neutral"}>{r.status}</Pill>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <AdReportActions id={r.id} status={r.status} />
+              </div>
             </div>
           ))
         )}
-      </AdCard>
+      </StudioCard>
     </div>
   );
 }

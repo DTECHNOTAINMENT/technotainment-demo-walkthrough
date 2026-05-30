@@ -9,7 +9,8 @@ import { earningsView } from "@/lib/queries/studio";
 import { formatCast, formatFiat } from "@/lib/cast";
 import { economy } from "@/lib/config";
 import { SxWithdraw } from "@/components/studio-x/SxWithdraw";
-import { SxPageHead, SxCard, SxStat, SxEmpty, SxPill, SX_PAGE } from "@/components/studio-x/SxPrimitives";
+import { SxCard, SxStat, SxEmpty, SxPill } from "@/components/studio-x/SxPrimitives";
+import { StudioPageHead } from "@/components/studio-ui";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +38,9 @@ export default async function StudioEarningsPage() {
   const kycVerified = user?.kyc === "verified";
 
   return (
-    <div style={SX_PAGE}>
-      <SxPageHead
+    <div className="page-pad" style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <StudioPageHead
+        eyebrow="creator studio"
         title="earnings"
         sub="your CAST balance, payouts to your bank, and a plain-language breakdown of every fee."
       />
