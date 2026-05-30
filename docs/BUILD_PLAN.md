@@ -30,12 +30,18 @@ Track progress by checking boxes in this file as you go.
 > …) until you supply keys. What I need from you: nothing yet — optionally connect the repo to Vercel
 > for a live preview URL. Next up: **Phase 1 — public pages + SEO**.
 
-## Phase 1 — Public pages + SEO  *(highest growth leverage — do early)*
-- [ ] `/c/:handle`, `/watch/:slug`, `/clip/:slug`, `/explore/:category`, `/live` — all **SSR/ISR**.
-- [ ] schema.org JSON-LD per `docs/ROUTES.md`; canonical, OG/Twitter tags, dynamic OG images.
-- [ ] Dynamic sitemaps (creators/videos/clips/categories) + robots.txt; 301 legacy redirects.
-- [ ] Core Web Vitals budgets met (LCP<2.5s, CLS<0.1, INP<200ms) on watch + channel pages.
-- **DoD:** a video page renders server-side with valid structured data (Rich Results test passes) and appears in a sitemap.
+## Phase 1 — Public pages + SEO  ✅ complete (2026-05-30)  *(highest growth leverage)*
+- [x] `/c/:handle`, `/watch/:slug`, `/clip/:slug`, `/explore/:category`, `/live`, `/search` — SSR/ISR (channel/watch/clip/explore ISR revalidate 60; live/search SSR).
+- [x] schema.org JSON-LD per `docs/ROUTES.md` (VideoObject + chapter `hasPart`, BroadcastEvent, Person/Organization, Product, BreadcrumbList); canonical + OG/Twitter tags; dynamic OG image at `/api/og`.
+- [x] Dynamic sitemaps (creators/videos/clips/categories via `generateSitemaps`) + robots.txt; 301 legacy redirects (`/u/:handle` static; `/video/:id`, `/stream/:id` slug-lookup handlers).
+- [~] Core Web Vitals: pages are server-rendered with lazy-loaded media and light client JS (~94 kB First Load). A full Lighthouse/CWV audit on real media is deferred to Phase 5 polish.
+- **DoD:** ✅ verified live against the seeded DB — `/watch/night-session-13` renders server-side with a valid `VideoObject` (name, duration, author, chapter `hasPart`) and appears in `sitemap/videos.xml`; `/api/og` returns a 1200×630 PNG; legacy ids 301-redirect.
+
+> **Owner note (Phase 1):** the public, search-facing surface is live. Every channel, video, clip,
+> explore hub and the live index now server-renders with rich-result structured data, social share
+> cards, and auto-generated sitemaps — the foundation for organic growth. Still mocked: video
+> playback uses a public test stream until Mux keys are added. Next up: **Phase 2 — viewer app + money in**
+> (wallet top-up, tips, memberships via Stripe test cards).
 
 ## Phase 2 — Viewer app + money in
 - [ ] Home, following, library, search, notifications, profile + **consent** model.

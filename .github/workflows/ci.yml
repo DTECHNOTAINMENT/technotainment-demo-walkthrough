@@ -36,3 +36,7 @@ jobs:
         env:
           # Build must succeed on mocks with no real provider keys (mock-first).
           LAUNCH_MODE: dev
+          # Dummy values so module imports (Prisma client, canonical URLs) resolve at build.
+          # No DB connection is made during the build (public pages are ISR/SSR, not prerendered).
+          DATABASE_URL: postgresql://build:build@localhost:5432/build
+          APP_URL: https://technotainment.fm

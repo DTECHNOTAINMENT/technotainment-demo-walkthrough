@@ -17,6 +17,13 @@ const nextConfig = {
       { protocol: "https", hostname: "**.amazonaws.com" },
     ],
   },
+  // Legacy → canonical redirects (301) to preserve link equity (docs/ROUTES.md).
+  // Dynamic id→slug redirects (/video/:id, /stream/:id) are handled by route handlers.
+  async redirects() {
+    return [
+      { source: "/u/:handle", destination: "/c/:handle", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

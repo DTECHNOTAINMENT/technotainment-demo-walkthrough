@@ -36,3 +36,6 @@ infra/**/.terraform/*
 infra/**/*.tfstate
 infra/**/*.tfstate.*
 *.tfvars
+
+# typescript build cache
+*.tsbuildinfo
