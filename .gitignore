@@ -39,3 +39,7 @@ infra/**/*.tfstate.*
 
 # typescript build cache
 *.tsbuildinfo
+
+# redis dump (local runtime artifact)
+dump.rdb
+*.rdb
