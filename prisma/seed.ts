@@ -2,9 +2,12 @@
  * Prisma seed — Technotainment (Metascape) Phase 0.
  *
  * Seeds a coherent slice mirroring the prototype fixtures (data.jsx,
- * studio-shared.jsx, admin-shared.jsx, payments.jsx):
- *   - ~6 users (Nyx is a creator; @mira.k, @oren.s, @theo.w, @nia.p, @spamzz)
- *   - Nyx Okafor creator + channel + 3 tiers + 6 videos + 1 live stream + products
+ * studio-shared.jsx, admin-shared.jsx, payments.jsx) at the prototype's density:
+ *   - viewer/admin users + a full creator roster (~17 creators incl. Nyx),
+ *     each with a User owner, a Creator, and a public Channel
+ *   - Nyx Okafor: 3 tiers + 6 videos + 1 live stream + scheduled streams + products
+ *   - ~16 live streams + ~24 published VODs spread across the roster (dense home/explore)
+ *   - Follows: @mira.k follows 18 channels (sidebar "following · 18")
  *   - Wallet ledger (append-only) whose sum IS the user's balance — no stored balance
  *   - Transactions, reports, connector registry, feature flags, a payout run, audit
  *
@@ -30,6 +33,7 @@ async function main() {
       await tx.transaction.deleteMany();
       await tx.membership.deleteMany();
       await tx.scheduledStream.deleteMany();
+      await tx.follow.deleteMany();
       await tx.video.deleteMany();
       await tx.stream.deleteMany();
       await tx.product.deleteMany();
@@ -134,6 +138,85 @@ async function main() {
             createdAt: daysAgo(2),
           },
         ],
+      });
+
+      // ================================================================
+      // CREATOR ROSTER — the rest of the prototype's CREATORS (data.jsx).
+      // Each creator gets a User owner, a Creator, and a public Channel so
+      // home / explore / sidebar look as dense as the prototype.
+      // (Nyx is created individually below to keep her existing data.)
+      // ================================================================
+      type Roster = {
+        id: string;
+        name: string;
+        handle: string;
+        email: string;
+        brand: string;
+        brand2: string;
+        category: string;
+        followers: number;
+        bio: string;
+      };
+      const roster: Roster[] = [
+        { id: "kavi", name: "Kavi Rao", handle: "@kavikitchen", email: "kavi@technotainment.fm", brand: "#dc2626", brand2: "#f97316", category: "live cooking", followers: 412300, bio: "live cooking, michelin technique, unfiltered kitchen." },
+        { id: "atlas", name: "Atlas FC", handle: "@atlasfc", email: "atlas@technotainment.fm", brand: "#1e3a8a", brand2: "#3b82f6", category: "lower-league football", followers: 988400, bio: "every matchday live · non-league football, one home." },
+        { id: "joon", name: "Joon Park", handle: "@joondraws", email: "joon@technotainment.fm", brand: "#9333ea", brand2: "#6366f1", category: "illustration", followers: 73800, bio: "ink and illustration, timed to your prompts." },
+        { id: "rivers", name: "Pip Rivers", handle: "@riverssings", email: "pip@technotainment.fm", brand: "#365314", brand2: "#84cc16", category: "country folk", followers: 39400, bio: "country folk, co-writes and open chord rooms." },
+        { id: "tola", name: "Tola Amari", handle: "@tolafixes", email: "tola@technotainment.fm", brand: "#0369a1", brand2: "#06b6d4", category: "electronics repair", followers: 181100, bio: "reviving vintage hi-fi on camera, one capacitor at a time." },
+        { id: "ines", name: "Inés Vidal", handle: "@inesskates", email: "ines@technotainment.fm", brand: "#be123c", brand2: "#fb7185", category: "street skate", followers: 596500, bio: "street skating across europe, frame-by-frame breakdowns." },
+        { id: "marlowe", name: "Margot Marlowe", handle: "@marlowestudio", email: "margot@technotainment.fm", brand: "#0f766e", brand2: "#22d3ee", category: "ceramics", followers: 84200, bio: "wheel-thrown ceramics, live kiln-opening drops." },
+        { id: "demo", name: "Demo Daye", handle: "@demodaye", email: "demo@technotainment.fm", brand: "#fb923c", brand2: "#ef4444", category: "talk show host", followers: 1240000, bio: "the morning show · daily live talk with guests." },
+        { id: "wren", name: "Wren Holloway", handle: "@wrenruns", email: "wren@technotainment.fm", brand: "#0ea5e9", brand2: "#6366f1", category: "ultra running", followers: 320900, bio: "ultra running, trail logs and pre-dawn runs." },
+        { id: "kola", name: "Kola Adebayo", handle: "@kolasounds", email: "kola@technotainment.fm", brand: "#be185d", brand2: "#7c3aed", category: "afro-fusion dj", followers: 705200, bio: "afro-fusion vinyl sets, rooftops and late nights." },
+        { id: "yara", name: "Yara Salam", handle: "@yarawrites", email: "yara@technotainment.fm", brand: "#8b5cf6", brand2: "#3b82f6", category: "novelist · workshop", followers: 156400, bio: "novelist · live writing rooms and prose workshops." },
+        { id: "rhett", name: "Rhett Doyle", handle: "@rhettclimbs", email: "rhett@technotainment.fm", brand: "#16a34a", brand2: "#facc15", category: "alpine climbing", followers: 244800, bio: "alpine climbing, expedition logs and gear talk." },
+        { id: "minerva", name: "Minerva Cho", handle: "@minervalab", email: "minerva@technotainment.fm", brand: "#0ea5e9", brand2: "#10b981", category: "chess · open analysis", followers: 419300, bio: "live chess and open analysis, openings to endgames." },
+        { id: "saber", name: "Saber Esports", handle: "@saberesports", email: "saber@technotainment.fm", brand: "#ef4444", brand2: "#7c3aed", category: "competitive esports", followers: 2400000, bio: "competitive esports · regional to invitational, every map." },
+        { id: "halcyon", name: "Halcyon Collective", handle: "@halcyon", email: "halcyon@technotainment.fm", brand: "#06b6d4", brand2: "#8b5cf6", category: "ambient sessions", followers: 184700, bio: "ambient live sessions and release listening events." },
+        { id: "marisol", name: "Marisol Vega", handle: "@marisolflies", email: "marisol@technotainment.fm", brand: "#fb7185", brand2: "#facc15", category: "trapeze · circus", followers: 91200, bio: "trapeze and circus arts, backstage and public classes." },
+        { id: "ozan", name: "Ozan Demir", handle: "@ozanbuilds", email: "ozan@technotainment.fm", brand: "#f59e0b", brand2: "#dc2626", category: "workshop · woodwork", followers: 502400, bio: "live joinery and woodwork, build-alongs with cut sheets." },
+      ];
+
+      await tx.user.createMany({
+        data: roster.map((r, i) => ({
+          id: `U-CR-${r.id}`,
+          handle: r.handle,
+          email: r.email,
+          displayName: r.name,
+          role: "creator" as const,
+          kyc: "verified" as const,
+          status: "active" as const,
+          lifetimeSpentCast: 0,
+          createdAt: daysAgo(300 - i * 7),
+        })),
+      });
+
+      await tx.creator.createMany({
+        data: roster.map((r, i) => ({
+          id: r.id,
+          userId: `U-CR-${r.id}`,
+          name: r.name,
+          handle: r.handle,
+          brand: r.brand,
+          brand2: r.brand2,
+          category: r.category,
+          followers: r.followers,
+          bio: r.bio,
+          takeRatePct: 12,
+          status: "active" as const,
+          createdAt: daysAgo(300 - i * 7),
+        })),
+      });
+
+      await tx.channel.createMany({
+        data: roster.map((r, i) => ({
+          id: `ch-${r.id}`,
+          creatorId: r.id,
+          handle: r.handle,
+          name: r.name,
+          bio: r.bio,
+          createdAt: daysAgo(300 - i * 7),
+        })),
       });
 
       // ================================================================
@@ -407,6 +490,159 @@ async function main() {
             sold: 240,
             stock: 38,
           },
+        ],
+      });
+
+      // ================================================================
+      // LIVE STREAMS — LIVE (data.jsx). Spread across the roster so the
+      // home "live now" grid is dense. All status=live, public.
+      // ================================================================
+      const liveStreams: {
+        id: string;
+        cid: string;
+        title: string;
+        category: string;
+        viewers: number;
+        startedMins: number;
+      }[] = [
+        { id: "str-atlas-1", cid: "atlas", title: "atlas fc vs northgate reserves", category: "sports", viewers: 47200, startedMins: 67 },
+        { id: "str-saber-1", cid: "saber", title: "valorant — grand finals · map 3", category: "esports", viewers: 184320, startedMins: 142 },
+        { id: "str-kavi-1", cid: "kavi", title: "sunday roast · you pick the bird", category: "talk", viewers: 4218, startedMins: 38 },
+        { id: "str-rivers-1", cid: "rivers", title: "open chord-building room", category: "music", viewers: 318, startedMins: 21 },
+        { id: "str-tola-1", cid: "tola", title: "reviving a 1978 marantz 2245", category: "education", viewers: 1607, startedMins: 95 },
+        { id: "str-ines-1", cid: "ines", title: "barcelona · gothic quarter session", category: "sports", viewers: 9842, startedMins: 52 },
+        { id: "str-demo-1", cid: "demo", title: "the morning show · with bea & lin", category: "talk", viewers: 22140, startedMins: 84 },
+        { id: "str-kola-1", cid: "kola", title: "saturday rooftop · vinyl only", category: "music", viewers: 6210, startedMins: 130 },
+        { id: "str-minerva-1", cid: "minerva", title: "live chess · sicilian deep dive", category: "education", viewers: 3920, startedMins: 46 },
+        { id: "str-rhett-1", cid: "rhett", title: "patagonia · day 14 base camp", category: "sports", viewers: 18230, startedMins: 210 },
+        { id: "str-joon-1", cid: "joon", title: "ink drawing · timed to viewer prompts", category: "talk", viewers: 1182, startedMins: 73 },
+        { id: "str-marlowe-1", cid: "marlowe", title: "kiln-open · 24 piece drop tonight", category: "talk", viewers: 612, startedMins: 18 },
+        { id: "str-wren-1", cid: "wren", title: "trail 17 · pre-dawn run", category: "sports", viewers: 4081, startedMins: 64 },
+        { id: "str-halcyon-1", cid: "halcyon", title: "ambient · pre-rain set", category: "music", viewers: 2280, startedMins: 40 },
+        { id: "str-ozan-1", cid: "ozan", title: "live joinery · cherry sideboard", category: "education", viewers: 1342, startedMins: 110 },
+        { id: "str-yara-1", cid: "yara", title: "writing room · members open", category: "education", viewers: 487, startedMins: 29 },
+      ];
+      await tx.stream.createMany({
+        data: liveStreams.map((s) => ({
+          id: s.id,
+          channelId: `ch-${s.cid}`,
+          title: s.title,
+          category: s.category,
+          visibility: "public" as const,
+          status: "live" as const,
+          rtmpUrl: "rtmp://ingest.technotainment.fm/live",
+          streamKey: `sk_live_${s.cid}_${s.id.slice(-4)}`,
+          healthResolution: "1080p60",
+          healthBitrateMbps: 6.0,
+          healthState: "healthy" as const,
+          viewers: s.viewers,
+          startedAt: minsAgo(s.startedMins),
+        })),
+      });
+
+      // ================================================================
+      // VODS — published public videos across channels (FOLLOWED_LATEST,
+      // NYX_LIBRARY-style). Gives explore / channel pages real content.
+      // ================================================================
+      const rosterVideos: {
+        cid: string;
+        title: string;
+        slug: string;
+        kind: "vod" | "clip";
+        durationSec: number;
+        views: number;
+        daysAgo: number;
+      }[] = [
+        { cid: "nyx", title: "patch notes for last night's #12 set", slug: "nyx-patch-notes-12", kind: "vod", durationSec: 5040, views: 18420, daysAgo: 0 },
+        { cid: "nyx", title: "ambient improv · 4am", slug: "nyx-ambient-improv-4am", kind: "vod", durationSec: 3960, views: 9210, daysAgo: 21 },
+        { cid: "kavi", title: "how we built tonight's menu, on camera", slug: "kavi-tonights-menu", kind: "vod", durationSec: 2520, views: 88200, daysAgo: 2 },
+        { cid: "kavi", title: "knife sharpening · members hour", slug: "kavi-knife-sharpening", kind: "vod", durationSec: 1980, views: 31400, daysAgo: 9 },
+        { cid: "atlas", title: "tactics breakdown · 4-2-3-1 away", slug: "atlas-tactics-4231-away", kind: "vod", durationSec: 1260, views: 142800, daysAgo: 6 },
+        { cid: "atlas", title: "post-match · away coach unfiltered", slug: "atlas-post-match-unfiltered", kind: "clip", durationSec: 480, views: 64100, daysAgo: 6 },
+        { cid: "marlowe", title: "wedging clay · beginner guide", slug: "marlowe-wedging-clay", kind: "vod", durationSec: 1080, views: 12200, daysAgo: 3 },
+        { cid: "joon", title: "inktober · day 22 timelapse", slug: "joon-inktober-day-22", kind: "clip", durationSec: 420, views: 28800, daysAgo: 5 },
+        { cid: "joon", title: "saturday 4-hour drawing · vod", slug: "joon-saturday-4h-drawing", kind: "vod", durationSec: 14400, views: 9400, daysAgo: 12 },
+        { cid: "ines", title: "tre flip · frame breakdown", slug: "ines-tre-flip-breakdown", kind: "clip", durationSec: 540, views: 96200, daysAgo: 7 },
+        { cid: "rivers", title: "the song we almost cut", slug: "rivers-song-we-almost-cut", kind: "vod", durationSec: 300, views: 14100, daysAgo: 8 },
+        { cid: "tola", title: "diagnosing a marantz · part one", slug: "tola-diagnosing-marantz-pt1", kind: "vod", durationSec: 1920, views: 41800, daysAgo: 9 },
+        { cid: "yara", title: "writing prompt · the last room", slug: "yara-writing-prompt-last-room", kind: "vod", durationSec: 720, views: 8800, daysAgo: 14 },
+        { cid: "kola", title: "sunset set · cape town", slug: "kola-sunset-set-cape-town", kind: "vod", durationSec: 4320, views: 70500, daysAgo: 14 },
+        { cid: "rhett", title: "alpine kit · what i actually pack", slug: "rhett-alpine-kit-pack", kind: "vod", durationSec: 960, views: 24400, daysAgo: 21 },
+        { cid: "wren", title: "long run · solo at altitude", slug: "wren-long-run-altitude", kind: "vod", durationSec: 2880, views: 32000, daysAgo: 21 },
+        { cid: "demo", title: "morning show · ep 184", slug: "demo-morning-show-ep-184", kind: "vod", durationSec: 3540, views: 124000, daysAgo: 1 },
+        { cid: "saber", title: "rocket league · 6-man scrim", slug: "saber-rocket-league-scrim", kind: "vod", durationSec: 6600, views: 224000, daysAgo: 2 },
+        { cid: "minerva", title: "sicilian · 30-position memo walkthrough", slug: "minerva-sicilian-memo", kind: "vod", durationSec: 2400, views: 41900, daysAgo: 4 },
+        { cid: "halcyon", title: "glass tide · stems walkthrough", slug: "halcyon-glass-tide-stems", kind: "vod", durationSec: 1500, views: 18400, daysAgo: 10 },
+        { cid: "ozan", title: "live build · cherry sideboard · part one", slug: "ozan-cherry-sideboard-pt1", kind: "vod", durationSec: 5400, views: 50200, daysAgo: 11 },
+        { cid: "marisol", title: "aerial silks · public class recap", slug: "marisol-aerial-silks-recap", kind: "vod", durationSec: 1320, views: 9100, daysAgo: 16 },
+      ];
+      await tx.video.createMany({
+        data: rosterVideos.map((v, i) => ({
+          id: `rv-${i + 1}`,
+          channelId: `ch-${v.cid}`,
+          title: v.title,
+          slug: v.slug,
+          description: `${v.title} — from ${v.cid}.`,
+          metaDescription: `${v.title} on Metascape.`,
+          thumbUrl: `https://picsum.photos/seed/${v.slug}/640/360`,
+          ogImageUrl: `https://og.technotainment.fm/v/${v.slug}.png`,
+          kind: v.kind,
+          status: "published" as const,
+          visibility: "public" as const,
+          ppvPriceCast: null,
+          durationSec: v.durationSec,
+          views: v.views,
+          castEarned: Math.round(v.views / 12),
+          captions: true,
+          publishedAt: daysAgo(v.daysAgo),
+        })),
+      });
+
+      // ================================================================
+      // EXTRA TIERS + PRODUCTS — so a few other channels aren't empty.
+      // ================================================================
+      await tx.tier.createMany({
+        data: [
+          { id: "tier-atlas-away", channelId: "ch-atlas", name: "away pass", priceCast: 750, perks: ["every away match live", "post-match coach feed", "tactics breakdowns"], popular: true },
+          { id: "tier-marlowe-insider", channelId: "ch-marlowe", name: "studio insider", priceCast: 900, perks: ["first dibs on kiln drops", "members-only process streams", "10% off the store"], popular: true },
+          { id: "tier-halcyon-stems", channelId: "ch-halcyon", name: "stems access", priceCast: 1200, perks: ["stems for every release", "release listening events", "credit on records"], popular: false },
+        ],
+      });
+      await tx.product.createMany({
+        data: [
+          { id: "p-marlowe-bowl", channelId: "ch-marlowe", kind: "drop", name: "small bowl · kiln drop 048", priceCast: 180, edition: "62 / 150", imgUrl: "https://picsum.photos/seed/ceramic-bowl/640/360", status: "live", sold: 88, stock: 62 },
+          { id: "p-kavi-apron", channelId: "ch-kavi", kind: "merch", name: "kavi's house apron", priceCast: 240, edition: "ships worldwide", imgUrl: "https://picsum.photos/seed/chef-apron/640/360", status: "live", sold: 1820, stock: null },
+          { id: "p-joon-ink", channelId: "ch-joon", kind: "drop", name: "ink drawing · sat 4-hour", priceCast: 320, edition: "1 of 1", imgUrl: "https://picsum.photos/seed/ink-sketch-large/640/360", status: "live", sold: 1, stock: 0 },
+          { id: "p-ozan-build", channelId: "ch-ozan", kind: "course", name: "live build · cherry sideboard", priceCast: 1240, edition: "vod + sheets", imgUrl: "https://picsum.photos/seed/woodworking-tools/640/360", status: "live", sold: 340, stock: null },
+          { id: "p-demo-pass", channelId: "ch-demo", kind: "ppv", name: "live show · annual pass", priceCast: 2400, edition: "12 months", imgUrl: "https://picsum.photos/seed/microphone-on-air/640/360", status: "live", sold: 5200, stock: null },
+        ],
+      });
+
+      // ================================================================
+      // FOLLOWS — @mira.k (U-48210) follows 18 channels so the sidebar
+      // shows "following · 18". Spread a few follows from other users too.
+      // ================================================================
+      const miraFollows = [
+        "nyx", "kavi", "atlas", "joon", "rivers", "tola", "ines", "marlowe",
+        "demo", "wren", "kola", "yara", "rhett", "minerva", "saber", "halcyon",
+        "marisol", "ozan",
+      ];
+      await tx.follow.createMany({
+        data: miraFollows.map((cid) => ({
+          userId: "U-48210",
+          channelId: `ch-${cid}`,
+          createdAt: daysAgo(120),
+        })),
+      });
+      await tx.follow.createMany({
+        data: [
+          { userId: "U-48199", channelId: "ch-nyx", createdAt: daysAgo(150) },
+          { userId: "U-48199", channelId: "ch-atlas", createdAt: daysAgo(100) },
+          { userId: "U-48199", channelId: "ch-kavi", createdAt: daysAgo(60) },
+          { userId: "U-48155", channelId: "ch-nyx", createdAt: daysAgo(360) },
+          { userId: "U-48155", channelId: "ch-saber", createdAt: daysAgo(200) },
+          { userId: "U-48122", channelId: "ch-nyx", createdAt: daysAgo(90) },
+          { userId: "U-48122", channelId: "ch-ines", createdAt: daysAgo(45) },
         ],
       });
 
