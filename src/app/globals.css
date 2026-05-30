@@ -29,6 +29,7 @@
     var(--bg-magenta), var(--bg-red), var(--bg-orange), var(--bg-cyan)
   );
   --live-gradient: linear-gradient(90deg, #ef4444, #f97316);
+  --live: #ef2b3d;
 
   /* Type */
   --font-display: "Plus Jakarta Sans", "Inter", -apple-system, system-ui, sans-serif;

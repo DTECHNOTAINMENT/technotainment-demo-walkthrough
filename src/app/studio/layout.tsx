@@ -19,15 +19,21 @@ export const metadata: Metadata = {
 
 export default async function StudioLayout({ children }: { children: ReactNode }) {
   let channelName: string | null = null;
+  let creatorHandle: string | null = null;
   try {
-    const { channel } = await requireCreatorChannel();
+    const { channel, creator } = await requireCreatorChannel();
     channelName = channel.name;
+    creatorHandle = creator.handle;
   } catch {
     // No creator channel yet: render children bare (no shell). The onboarding page renders
     // full-screen, and every gated page self-redirects to /studio/onboarding — so the layout
     // must NOT redirect here, or /studio/onboarding (which is under this layout) would loop.
   }
   if (!channelName) return <>{children}</>;
+
+  const channelHref = creatorHandle
+    ? `/c/${encodeURIComponent(creatorHandle.replace(/^@/, ""))}`
+    : "/home";
 
   return (
     <div
@@ -81,11 +87,19 @@ export default async function StudioLayout({ children }: { children: ReactNode }
           <div style={{ flex: 1 }} />
 
           <Link
-            href="/home"
+            href={channelHref}
             className="btn btn-glass lower"
             style={{ padding: "9px 14px", fontSize: 13, textDecoration: "none" }}
           >
-            back to app
+            view channel
+          </Link>
+
+          <Link
+            href="/studio/content"
+            className="btn btn-glass lower"
+            style={{ padding: "9px 14px", fontSize: 13, textDecoration: "none" }}
+          >
+            upload
           </Link>
 
           <ThemeToggle />

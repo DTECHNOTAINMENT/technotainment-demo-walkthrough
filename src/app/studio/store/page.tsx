@@ -1,16 +1,19 @@
 /**
- * /studio/store — drops, pay-per-view, courses and merch sold in CAST. Read-only grid of the
- * channel's products; "new product" is a stub (full CRUD is out of scope for this phase).
+ * /studio/store — drops, pay-per-view, courses and merch sold in CAST. Ported to match
+ * prototype/v4/studio-store.jsx: KPI StatCards, a product grid with cover art, kind/status
+ * pills, a sales meter and per-card earnings. Read-only ("new product" is a stub — full CRUD
+ * is out of scope for this phase). Data via listProducts(); money formatted at the edge.
  */
 import { redirect } from "next/navigation";
 import { requireCreatorChannel } from "@/lib/studio";
 import { listProducts } from "@/lib/queries/studio";
 import { formatCast, formatFiat } from "@/lib/cast";
-import { SxPageHead, SxCard, SxStat, SxEmpty, SxPill, SxMeter, SX_PAGE } from "@/components/studio-x/SxPrimitives";
+import { Icon } from "@/components/ui/Icon";
+import { StatCard, StudioPageHead, Pill, Meter, type PillTone } from "@/components/studio-ui";
 
 export const dynamic = "force-dynamic";
 
-const KIND_TONE: Record<string, "info" | "ok" | "warn" | "neutral"> = {
+const KIND_TONE: Record<string, PillTone> = {
   drop: "info",
   course: "ok",
   ppv: "warn",
@@ -33,42 +36,45 @@ export default async function StudioStorePage() {
   const topSold = products.reduce((m, p) => Math.max(m, p.sold), 0) || 1;
 
   return (
-    <div style={SX_PAGE}>
-      <SxPageHead
+    <div className="page-pad" style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <StudioPageHead
+        eyebrow="creator studio"
         title="store"
         sub="drops, pay-per-view, courses and merch — sold in CAST, fulfilled by technotainment."
         actions={
-          <button className="btn btn-grad lower" style={{ padding: "11px 16px" }} disabled title="coming soon">
-            + new product
+          <button className="btn btn-grad lower" style={{ padding: "12px 18px" }} disabled title="coming soon">
+            <Icon name="plus" size={15} stroke={2.6} /> new product
           </button>
         }
       />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12, marginBottom: 18 }}>
-        <SxStat label="store revenue" value={formatCast(revenue)} unit="CAST" sub={formatFiat(revenue)} grad />
-        <SxStat label="units sold" value={formatCast(unitsSold)} unit="all time" sub={`across ${products.length} products`} />
-        <SxStat label="live products" value={String(liveCount)} unit="published" sub={`${products.length - liveCount} draft`} />
-        <SxStat label="catalogue" value={String(products.length)} unit="total" />
+      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
+        <StatCard label="store revenue" icon="cast" value={formatCast(revenue)} unit="CAST" fiat={formatFiat(revenue)} />
+        <StatCard label="units sold" icon="bag" value={formatCast(unitsSold)} unit="all time" fiat={`across ${products.length} products`} sparkColor="#06b6d4" />
+        <StatCard label="live products" icon="check" value={String(liveCount)} unit="published" fiat={`${products.length - liveCount} draft`} sparkColor="#10b981" />
+        <StatCard label="catalogue" icon="trend" value={String(products.length)} unit="total" sparkColor="#ec4899" />
       </div>
 
       {products.length === 0 ? (
-        <SxEmpty title="no products yet" hint="drops, ppv, courses and merch you publish will appear here." />
+        <div className="card" style={{ background: "var(--surface)", padding: 40, textAlign: "center", marginTop: 18, border: "1px dashed var(--hairline-2)" }}>
+          <div className="lower" style={{ fontSize: 14, fontWeight: 700, color: "var(--ink-2)" }}>
+            no products yet
+          </div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-3)", marginTop: 6 }}>
+            drops, ppv, courses and merch you publish will appear here.
+          </div>
+        </div>
       ) : (
-        <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))" }}>
+        <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", marginTop: 18 }}>
           {products.map((p) => (
-            <div key={p.id} className="card" style={{ background: "var(--surface)", padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div key={p.id} className="card" style={{ background: "var(--surface)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
               <div
-                style={{
-                  aspectRatio: "16 / 10",
-                  backgroundImage: `url(${p.imgUrl})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  position: "relative",
-                }}
+                className="thumb"
+                style={{ backgroundImage: `url(${p.imgUrl})`, aspectRatio: "16/10", borderRadius: 0, position: "relative" }}
               >
                 <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6 }}>
-                  <SxPill tone={KIND_TONE[p.kind] ?? "neutral"}>{p.kind}</SxPill>
-                  {p.status === "draft" && <SxPill tone="neutral">draft</SxPill>}
+                  <Pill tone={KIND_TONE[p.kind] ?? "neutral"}>{p.kind}</Pill>
+                  {p.status === "draft" && <Pill tone="neutral">draft</Pill>}
                 </div>
               </div>
               <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
@@ -81,13 +87,16 @@ export default async function StudioStorePage() {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="tnum" style={{ fontSize: 16, fontWeight: 800 }}>
-                    {formatCast(p.priceCast)} CAST
+                    <span className="cast-glyph" style={{ width: 16, height: 16, fontSize: 9, verticalAlign: -2 }}>
+                      c
+                    </span>{" "}
+                    {formatCast(p.priceCast)}
                   </span>
                   <span className="lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>
                     <span className="tnum">{formatCast(p.sold)}</span> sold
                   </span>
                 </div>
-                <SxMeter pct={(p.sold / topSold) * 100} />
+                <Meter value={p.sold / topSold} />
                 <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)" }}>
                   {formatFiat(p.priceCast)} each · {formatCast(p.sold * p.priceCast)} CAST earned
                 </div>

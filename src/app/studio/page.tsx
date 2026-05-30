@@ -1,22 +1,48 @@
 /**
- * Creator Studio — dashboard (/studio). Server-rendered overview: KPI stat cards
- * (followers, active members, videos, available CAST), a payout snapshot, and a
- * recent-activity ledger. Data via studioOverview(); money formatted at the edge
- * with formatCast/formatFiat. Mirrors prototype/v4/studio-dashboard.jsx.
+ * Creator Studio — dashboard (/studio). Server-rendered overview ported to match
+ * prototype/v4/studio-dashboard.jsx: KPI StatCards (with icons + sparks), a payout
+ * snapshot rail, a revenue-split SegBar derived from settled activity, and a recent
+ * activity ledger (`.act-row`). Data via studioOverview(); money formatted at the edge
+ * with formatCast/formatFiat. Charts/cards reuse the studio-ui primitives.
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireCreatorChannel } from "@/lib/studio";
 import { studioOverview } from "@/lib/queries/studio";
 import { formatCast, formatFiat } from "@/lib/cast";
+import { Icon } from "@/components/ui/Icon";
+import {
+  StatCard,
+  StudioCard,
+  StudioPageHead,
+  Pill,
+  SegBar,
+  type SegBarSegment,
+} from "@/components/studio-ui";
 
-const KIND_LABEL: Record<string, string> = {
+const ACT_STYLE: Record<string, { color: string; icon: string }> = {
+  tip: { color: "#ec4899", icon: "tip" },
+  membership: { color: "#8b5cf6", icon: "heart" },
+  gift: { color: "#f97316", icon: "gift" },
+  drop: { color: "#06b6d4", icon: "bag" },
+  ppv: { color: "#10b981", icon: "film" },
+  topup: { color: "#06b6d4", icon: "wallet" },
+};
+const ACT_LABEL: Record<string, string> = {
   tip: "tip",
   membership: "new member",
   gift: "gifted subs",
   drop: "drop sale",
   ppv: "ppv rental",
   topup: "top-up",
+};
+
+const SPLIT_COLOR: Record<string, string> = {
+  membership: "#8b5cf6",
+  tip: "#ec4899",
+  ppv: "#f97316",
+  drop: "#06b6d4",
+  gift: "#10b981",
 };
 
 function timeAgo(d: Date): string {
@@ -27,39 +53,6 @@ function timeAgo(d: Date): string {
   const hrs = Math.round(mins / 60);
   if (hrs < 24) return `${hrs}h`;
   return `${Math.round(hrs / 24)}d`;
-}
-
-interface StatProps {
-  label: string;
-  value: string;
-  unit?: string;
-  fiat?: string;
-}
-
-function StatCard({ label, value, unit, fiat }: StatProps) {
-  return (
-    <div className="card" style={{ padding: 18, display: "flex", flexDirection: "column", gap: 10, background: "var(--surface)" }}>
-      <span
-        className="lower"
-        style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-3)" }}
-      >
-        {label}
-      </span>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-        <span className="tnum stat-num" style={{ fontSize: 30 }}>
-          {value}
-        </span>
-        {unit && (
-          <span className="lower" style={{ fontSize: 13, color: "var(--ink-3)", fontWeight: 700 }}>
-            {unit}
-          </span>
-        )}
-      </div>
-      <span className="mono" style={{ fontSize: 11, color: "var(--ink-4)", minHeight: 14 }}>
-        {fiat ?? ""}
-      </span>
-    </div>
-  );
 }
 
 export default async function StudioDashboardPage() {
@@ -75,117 +68,151 @@ export default async function StudioDashboardPage() {
 
   const { videoCount, memberCount, followerCount, recent, earnings } = await studioOverview(channelId, creatorId);
 
+  // Revenue split derived from the recent settled activity (presentation only).
+  const byKind: Record<string, number> = {};
+  for (const tx of recent) {
+    if (tx.cast > 0) byKind[tx.kind] = (byKind[tx.kind] ?? 0) + tx.cast;
+  }
+  const splitTotal = Object.values(byKind).reduce((a, v) => a + v, 0);
+  const segments: SegBarSegment[] = Object.entries(byKind)
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, cast]) => ({ id, label: ACT_LABEL[id] ?? id, cast, color: SPLIT_COLOR[id] ?? "#8b5cf6" }));
+
   return (
-    <div style={{ maxWidth: 1300, margin: "0 auto", padding: "28px 24px 80px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16, marginBottom: 22 }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-3)", marginBottom: 7 }}>
-            creator studio
-          </div>
-          <h1 className="lower" style={{ margin: 0, fontSize: "clamp(26px, 3vw, 34px)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.05 }}>
-            dashboard
-          </h1>
-          <div style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 6 }}>your channel at a glance — audience, content and money in.</div>
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Link href="/studio/live" className="btn btn-grad lower" style={{ padding: "12px 18px", textDecoration: "none" }}>
-            go live
-          </Link>
-          <Link href="/studio/content" className="btn btn-grad-stroke lower" style={{ padding: "12px 18px", textDecoration: "none" }}>
-            upload
-          </Link>
-        </div>
-      </div>
+    <div className="page-pad" style={{ maxWidth: 1500, margin: "0 auto" }}>
+      <StudioPageHead
+        eyebrow="creator studio"
+        title="dashboard"
+        sub="your channel at a glance — audience, content and money in."
+        actions={
+          <>
+            <Link href="/studio/live" className="btn btn-grad lower" style={{ padding: "12px 18px", textDecoration: "none" }}>
+              <Icon name="flame" size={15} stroke={2.4} /> go live
+            </Link>
+            <Link href="/studio/content" className="btn btn-grad-stroke lower" style={{ padding: "12px 18px", textDecoration: "none" }}>
+              <Icon name="plus" size={15} stroke={2.6} /> upload
+            </Link>
+          </>
+        }
+      />
 
       {/* KPI row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-        <StatCard label="followers" value={formatCast(followerCount)} unit="total" />
-        <StatCard label="active members" value={formatCast(memberCount)} unit="active" />
-        <StatCard label="videos" value={formatCast(videoCount)} unit="in library" />
+      <div className="kpi-grid">
+        <StatCard label="followers" icon="users" value={formatCast(followerCount)} unit="total" />
+        <StatCard label="members" icon="heart" value={formatCast(memberCount)} unit="active" sparkColor="#ec4899" />
+        <StatCard label="videos" icon="film" value={formatCast(videoCount)} unit="in library" sparkColor="#06b6d4" />
         <StatCard
           label="available CAST"
+          icon="cast"
           value={formatCast(earnings.availableCast)}
           unit="to pay out"
           fiat={`= ${formatFiat(earnings.availableCast)}`}
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 360px)", gap: 16, marginTop: 16, alignItems: "start" }}>
-        {/* Recent activity */}
-        <section className="card" style={{ background: "var(--surface)", overflow: "hidden" }}>
-          <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--hairline)" }}>
-            <div className="lower" style={{ fontWeight: 800, fontSize: 15 }}>
-              recent activity
-            </div>
-            <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>money in, newest first</div>
-          </div>
-          {recent.length ? (
-            <div>
-              {recent.map((tx, i) => {
-                const positive = tx.cast > 0;
-                return (
-                  <div
-                    key={tx.id}
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      alignItems: "center",
-                      padding: "13px 18px",
-                      borderTop: i ? "1px solid var(--hairline)" : "none",
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="lower" style={{ fontSize: 13, fontWeight: 700 }}>
-                        {KIND_LABEL[tx.kind] ?? tx.kind}
+      <div className="st-split" style={{ marginTop: 16 }}>
+        {/* LEFT — recent activity */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <StudioCard title="recent activity" sub="money in, newest first" action={<Pill tone="ok">live</Pill>} pad={false}>
+            {recent.length ? (
+              <div style={{ padding: "8px 8px 12px", maxHeight: 460, overflowY: "auto" }}>
+                {recent.map((tx) => {
+                  const st = ACT_STYLE[tx.kind] ?? { color: "#8b5cf6", icon: "cast" };
+                  const positive = tx.cast > 0;
+                  return (
+                    <div key={tx.id} className="act-row">
+                      <span className="act-ico" style={{ background: st.color }}>
+                        <Icon name={st.icon} size={16} stroke={2.2} />
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 700 }} className="lower">
+                          {ACT_LABEL[tx.kind] ?? tx.kind}
+                        </div>
+                        <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>
+                          {tx.method}
+                        </div>
                       </div>
-                      <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>
-                        {timeAgo(tx.createdAt)} ago · {tx.method}
+                      <div style={{ textAlign: "right" }}>
+                        <div className="tnum" style={{ fontSize: 13, fontWeight: 800, color: positive ? "#10b981" : "var(--ink-1)" }}>
+                          {positive ? "+" : "−"}
+                          {formatCast(Math.abs(tx.cast))}
+                        </div>
+                        <div style={{ fontSize: 10, color: "var(--ink-4)" }}>{timeAgo(tx.createdAt)}</div>
                       </div>
                     </div>
-                    <span className="tnum" style={{ fontSize: 13, fontWeight: 800, color: positive ? "#10b981" : "var(--ink-1)" }}>
-                      {positive ? "+" : "−"}
-                      {formatCast(Math.abs(tx.cast))}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ padding: "32px 18px", textAlign: "center" }}>
-              <p className="lower" style={{ fontSize: 13, color: "var(--ink-3)", margin: 0 }}>
-                no activity yet — once fans tip, subscribe or buy, it shows up here.
-              </p>
-            </div>
-          )}
-        </section>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ padding: "32px 18px", textAlign: "center" }}>
+                <p className="lower" style={{ fontSize: 13, color: "var(--ink-3)", margin: 0 }}>
+                  no activity yet — once fans tip, subscribe or buy, it shows up here.
+                </p>
+              </div>
+            )}
+          </StudioCard>
+        </div>
 
-        {/* Payout snapshot */}
-        <section className="card" style={{ background: "var(--surface)", overflow: "hidden", alignSelf: "start" }}>
-          <div className="brand-hairline" />
-          <div style={{ padding: 18 }}>
-            <div className="lower" style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-3)" }}>
-              available to pay out
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 10 }}>
-              <span className="cast-glyph" style={{ width: 26, height: 26, fontSize: 13 }}>
-                c
-              </span>
-              <span className="tnum brand-grad-text stat-num" style={{ fontSize: 40 }}>
-                {formatCast(earnings.availableCast)}
-              </span>
-            </div>
-            <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 6 }}>
-              = {formatFiat(earnings.availableCast)} · {formatCast(earnings.pendingCast)} CAST clearing
-            </div>
-            <Link href="/studio/earnings" className="btn btn-grad lower" style={{ width: "100%", marginTop: 14, padding: 12, textDecoration: "none", justifyContent: "center", display: "flex" }}>
-              withdraw
-            </Link>
-            <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 12, display: "flex", flexDirection: "column", gap: 4 }}>
-              <span>lifetime net · {formatCast(earnings.netCast)} CAST</span>
-              <span>paid out · {formatCast(earnings.paidCast)} CAST</span>
+        {/* RIGHT rail */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Payout snapshot */}
+          <div className="card" style={{ background: "var(--surface)", overflow: "hidden" }}>
+            <div className="brand-hairline" />
+            <div style={{ padding: 18 }}>
+              <div
+                className="lower"
+                style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-3)" }}
+              >
+                available to pay out
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 10 }}>
+                <span className="cast-glyph" style={{ width: 26, height: 26, fontSize: 13 }}>
+                  c
+                </span>
+                <span className="tnum brand-grad-text stat-num" style={{ fontSize: 44 }}>
+                  {formatCast(earnings.availableCast)}
+                </span>
+              </div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 6 }}>
+                = {formatFiat(earnings.availableCast)} · {formatCast(earnings.pendingCast)} CAST clearing
+              </div>
+              <Link
+                href="/studio/earnings"
+                className="btn btn-grad lower"
+                style={{ width: "100%", marginTop: 14, padding: 12, textDecoration: "none", justifyContent: "center", display: "flex" }}
+              >
+                <Icon name="wallet" size={15} stroke={2.2} /> withdraw
+              </Link>
+              <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+                <span>lifetime net · {formatCast(earnings.netCast)} CAST</span>
+                <span>paid out · {formatCast(earnings.paidCast)} CAST</span>
+              </div>
             </div>
           </div>
-        </section>
+
+          {/* Revenue split */}
+          {segments.length > 0 && (
+            <StudioCard title="where it came from" sub="recent activity · by source">
+              <SegBar segments={segments} total={splitTotal} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
+                {segments.map((r) => (
+                  <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span className="legdot" style={{ background: r.color }} />
+                    <span style={{ flex: 1, fontSize: 12.5, color: "var(--ink-2)" }} className="lower">
+                      {r.label}
+                    </span>
+                    <span className="tnum" style={{ fontSize: 12.5, fontWeight: 700 }}>
+                      {formatCast(r.cast)}
+                    </span>
+                    <span className="mono" style={{ fontSize: 11, color: "var(--ink-4)", width: 34, textAlign: "right" }}>
+                      {Math.round((r.cast / splitTotal) * 100)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </StudioCard>
+          )}
+        </div>
       </div>
     </div>
   );

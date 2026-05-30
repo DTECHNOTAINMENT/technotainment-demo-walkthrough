@@ -1,16 +1,20 @@
 "use client";
 
 /**
- * StSidebar — the Creator Studio left-nav. Client component so it can read the active
- * route via usePathname. Active state highlights the current segment. Ports the
- * prototype's grouped sidebar (studio-app.jsx) into a Next.js Link list.
+ * StSidebar — the Creator Studio left-nav, ported to match prototype/v4/studio-app.jsx:
+ * logo + "technotainment" + studio badge header (`.sb-head` / `.studio-badge`), grouped nav
+ * with per-item icons and section labels (`.sb-item` / `.sb-section`), and an "exit studio"
+ * mode-switch pinned to the bottom (`.mode-switch`). Client component so it can read the
+ * active route via usePathname. Active state highlights the current segment.
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Icon } from "@/components/ui/Icon";
 
 interface NavItem {
   href: string;
   label: string;
+  icon: string;
 }
 interface NavGroup {
   section: string | null;
@@ -18,26 +22,26 @@ interface NavGroup {
 }
 
 const NAV: NavGroup[] = [
-  { section: null, items: [{ href: "/studio", label: "dashboard" }] },
+  { section: null, items: [{ href: "/studio", label: "dashboard", icon: "grid" }] },
   {
     section: "create",
     items: [
-      { href: "/studio/live", label: "go live" },
-      { href: "/studio/content", label: "content" },
-      { href: "/studio/store", label: "store" },
+      { href: "/studio/live", label: "go live", icon: "flame" },
+      { href: "/studio/content", label: "content", icon: "film" },
+      { href: "/studio/store", label: "store", icon: "bag" },
     ],
   },
   {
     section: "grow",
     items: [
-      { href: "/studio/audience", label: "audience" },
-      { href: "/studio/memberships", label: "memberships" },
-      { href: "/studio/analytics", label: "analytics" },
+      { href: "/studio/audience", label: "audience", icon: "users" },
+      { href: "/studio/memberships", label: "memberships", icon: "heart" },
+      { href: "/studio/analytics", label: "analytics", icon: "trend" },
     ],
   },
   {
     section: "money",
-    items: [{ href: "/studio/earnings", label: "earnings" }],
+    items: [{ href: "/studio/earnings", label: "earnings", icon: "wallet" }],
   },
 ];
 
@@ -48,18 +52,17 @@ function isActive(pathname: string, href: string): boolean {
 
 export function StSidebar() {
   const pathname = usePathname() ?? "/studio";
+  const settingsActive = isActive(pathname, "/studio/settings");
 
   return (
     <aside
       style={{
-        width: 230,
-        flex: "0 0 230px",
+        width: 240,
+        flex: "0 0 240px",
         borderRight: "1px solid var(--hairline)",
         background: "var(--surface)",
-        padding: "16px 12px",
         display: "flex",
         flexDirection: "column",
-        gap: 4,
         position: "sticky",
         top: 0,
         alignSelf: "flex-start",
@@ -67,69 +70,67 @@ export function StSidebar() {
         overflowY: "auto",
       }}
     >
-      {NAV.map((grp, gi) => (
-        <div key={gi} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {grp.section && (
-            <div
-              className="lower"
-              style={{
-                fontSize: 10,
-                fontWeight: 800,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "var(--ink-4)",
-                padding: "14px 12px 6px",
-              }}
-            >
-              {grp.section}
-            </div>
-          )}
-          {grp.items.map((it) => {
-            const active = isActive(pathname, it.href);
-            return (
-              <Link
-                key={it.href}
-                href={it.href}
-                className="lower"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  fontSize: 13.5,
-                  fontWeight: active ? 800 : 600,
-                  textDecoration: "none",
-                  color: active ? "var(--ink-1)" : "var(--ink-3)",
-                  background: active ? "var(--surface-2)" : "transparent",
-                  border: `1px solid ${active ? "var(--hairline)" : "transparent"}`,
-                }}
-              >
-                {it.label}
-              </Link>
-            );
-          })}
-        </div>
-      ))}
+      <div className="sb-head" style={{ justifyContent: "space-between" }}>
+        <Link
+          href="/studio"
+          aria-label="studio home"
+          className="lower"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            textDecoration: "none",
+            fontWeight: 800,
+            fontSize: 15,
+            letterSpacing: "-0.03em",
+            color: "var(--ink-1)",
+          }}
+        >
+          technotainment
+        </Link>
+        <span className="studio-badge">studio</span>
+      </div>
 
-      <div style={{ flex: 1 }} />
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 12 }}>
+        {NAV.map((grp, gi) => (
+          <div key={gi}>
+            {grp.section && <div className="sb-section">{grp.section}</div>}
+            {grp.items.map((it) => {
+              const active = isActive(pathname, it.href);
+              return (
+                <Link key={it.href} href={it.href} className={`sb-item ${active ? "active" : ""}`}>
+                  <Icon name={it.icon} size={18} stroke={active ? 2.4 : 1.8} /> {it.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
 
-      <Link
-        href="/studio/settings"
-        className="lower"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "10px 12px",
-          borderRadius: 10,
-          fontSize: 13.5,
-          fontWeight: isActive(pathname, "/studio/settings") ? 800 : 600,
-          textDecoration: "none",
-          color: isActive(pathname, "/studio/settings") ? "var(--ink-1)" : "var(--ink-3)",
-          background: isActive(pathname, "/studio/settings") ? "var(--surface-2)" : "transparent",
-        }}
-      >
-        settings
+        <div className="sb-divider" />
+        <Link href="/studio/settings" className={`sb-item ${settingsActive ? "active" : ""}`}>
+          <Icon name="settings" size={18} stroke={settingsActive ? 2.4 : 1.8} /> settings
+        </Link>
+      </div>
+
+      <Link href="/home" className="mode-switch lower" style={{ marginBottom: 16, textDecoration: "none" }}>
+        <span
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 9,
+            background: "var(--surface-2)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flex: "0 0 34px",
+          }}
+        >
+          <Icon name="eye" size={16} stroke={2.2} />
+        </span>
+        <span style={{ minWidth: 0 }}>
+          <span style={{ display: "block", fontSize: 13, fontWeight: 700 }}>exit studio</span>
+          <span style={{ display: "block", fontSize: 10.5, color: "var(--ink-3)" }}>back to watching</span>
+        </span>
       </Link>
     </aside>
   );

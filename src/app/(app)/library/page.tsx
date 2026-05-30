@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { library } from "@/lib/queries/viewer";
 import { formatCast } from "@/lib/cast";
+import { PageHeader } from "@/components/viewer/shared";
 
 export const metadata: Metadata = { title: "library", robots: { index: false } };
 
@@ -15,16 +16,13 @@ export default async function LibraryPage() {
   const empty = memberships.length === 0 && purchases.length === 0;
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", flexDirection: "column", gap: 22 }}>
-      <div>
-        <h1 className="lower" style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", margin: "0 0 4px" }}>
-          library
-        </h1>
-        <p className="lower" style={{ color: "var(--ink-3)", fontSize: 13, margin: 0 }}>
-          your memberships and everything you&rsquo;ve unlocked with CAST.
-        </p>
-      </div>
-
+    <div className="page-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <PageHeader
+        eyebrow="your library"
+        title="library"
+        sub="your memberships and everything you've unlocked with CAST."
+      />
+      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       {empty ? (
         <div className="card" style={{ padding: 40, textAlign: "center", background: "var(--surface)" }}>
           <div className="lower" style={{ fontWeight: 800, fontSize: 16 }}>
@@ -131,6 +129,7 @@ export default async function LibraryPage() {
           </section>
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { ThemeToggle } from "@/components/theme";
+import { PageHeader } from "@/components/viewer/shared";
 
 export const metadata: Metadata = { title: "settings", robots: { index: false } };
 
@@ -18,16 +19,9 @@ export default async function SettingsPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
-      <div>
-        <h1 className="lower" style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", margin: "0 0 4px" }}>
-          settings
-        </h1>
-        <p className="lower" style={{ color: "var(--ink-3)", fontSize: 13, margin: 0 }}>
-          account basics and preferences.
-        </p>
-      </div>
-
+    <div className="page-pad" style={{ maxWidth: 720, margin: "0 auto" }}>
+      <PageHeader eyebrow="you" title="settings" sub="account basics and preferences." />
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <section className="card" style={{ padding: 18, background: "var(--surface)" }}>
         <div className="lower" style={{ fontWeight: 800, fontSize: 15, marginBottom: 12 }}>
           account
@@ -90,6 +84,7 @@ export default async function SettingsPage() {
           </Link>
         </div>
       </section>
+      </div>
     </div>
   );
 }

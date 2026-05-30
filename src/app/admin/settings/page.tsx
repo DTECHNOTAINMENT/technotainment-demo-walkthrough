@@ -1,24 +1,22 @@
 /**
- * /admin/settings — the control center ("configure, don't code", CLAUDE.md §4b). The owner
- * runs Technotainment from here without a developer:
- *  - branding (company/app/currency/tagline)  → setting 'branding'
- *  - fees & the CAST economy (take rate, CAST per £, hold days) → setting 'fees'
- *  - feature flags (AxFlagToggle → flag action)
- *  - regions + team/RBAC (read-only)
- *  - the audit log of every privileged action.
- * Each save writes a Setting + an AuditEvent and takes effect at runtime — no deploy.
- * Server component reads getSetting (DB-backed, config as fallback) + the lists.
+ * /admin/settings — the control center ("configure, don't code", CLAUDE.md §4b). The owner runs
+ * Technotainment from here without a developer: branding, fees & the CAST economy (AxSetting →
+ * setting action), feature flags (AxFlagToggle → flag action), regions + team/RBAC (read-only)
+ * and the audit log of every privileged action. Each save writes a Setting + an AuditEvent and
+ * takes effect at runtime — no deploy. Server component. Spec: prototype/v4/admin-settings.jsx
+ * + admin-controls.jsx.
  */
 import { listFlags, listTeam, listAudit } from "@/lib/queries/admin";
 import { getSetting } from "@/lib/admin";
 import { branding, economy } from "@/lib/config";
-import { AxPageHead, AxCard, AxRow, AxPill, AxEmpty, AxHint, type Tone, AX_PAGE } from "@/components/admin-x/AxPrimitives";
+import { StudioCard, StudioPageHead, Pill, type PillTone } from "@/components/studio-ui";
+import { Icon } from "@/components/ui/Icon";
 import { AxSetting, type AxField } from "@/components/admin-x/AxSetting";
 import { AxFlagToggle } from "@/components/admin-x/AxFlagToggle";
 
 export const dynamic = "force-dynamic";
 
-const KIND_TONE: Record<string, Tone> = {
+const KIND_TONE: Record<string, PillTone> = {
   moderation: "live",
   creators: "info",
   trust: "warn",
@@ -41,13 +39,13 @@ interface FeesSetting {
   payoutHoldDays: number;
 }
 
-const REGIONS: Array<{ r: string; cur: string; tax: string; status: Tone; label: string }> = [
-  { r: "United Kingdom", cur: "GBP", tax: "VAT · HMRC", status: "ok", label: "live" },
-  { r: "European Union", cur: "EUR", tax: "VAT MOSS · DAC7", status: "ok", label: "live" },
-  { r: "United States", cur: "USD", tax: "sales tax · 1099-K", status: "info", label: "beta" },
-  { r: "Canada", cur: "CAD", tax: "GST/HST", status: "info", label: "beta" },
-  { r: "Australia", cur: "AUD", tax: "GST", status: "neutral", label: "planned" },
-  { r: "Brazil", cur: "BRL", tax: "—", status: "neutral", label: "planned" },
+const REGIONS: Array<{ r: string; cur: string; tax: string; tone: PillTone; label: string }> = [
+  { r: "United Kingdom", cur: "GBP", tax: "VAT · HMRC", tone: "ok", label: "live" },
+  { r: "European Union", cur: "EUR", tax: "VAT MOSS · DAC7", tone: "ok", label: "live" },
+  { r: "United States", cur: "USD", tax: "sales tax · 1099-K", tone: "info", label: "beta" },
+  { r: "Canada", cur: "CAD", tax: "GST/HST", tone: "info", label: "beta" },
+  { r: "Australia", cur: "AUD", tax: "GST", tone: "neutral", label: "planned" },
+  { r: "Brazil", cur: "BRL", tax: "—", tone: "neutral", label: "planned" },
 ];
 
 const BRANDING_FIELDS: AxField[] = [
@@ -85,47 +83,45 @@ export default async function AdminSettingsPage() {
   const roadmapFlags = flags.filter((f) => f.group === "roadmap");
 
   return (
-    <div style={AX_PAGE}>
-      <AxPageHead
+    <div className="page-pad" style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <StudioPageHead
         eyebrow="platform"
         title="control center"
-        sub="run Technotainment without a developer — branding, fees and the CAST economy, feature rollouts, regions, your team and the audit trail. every change writes an audit event and takes effect at runtime, no deploy."
+        sub="run technotainment without a developer — branding, fees, the CAST economy, feature rollouts, regions, your team and the audit trail. every change writes an audit event and takes effect at runtime, no deploy."
       />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* branding */}
-        <AxCard title="branding" sub="names and voice used across the product, emails and SEO">
+        <StudioCard title="branding" sub="names and voice used across the product, emails and SEO">
           <AxSetting settingKey="branding" fields={BRANDING_FIELDS} initial={{ ...brand }} saveLabel="save branding" />
-        </AxCard>
+        </StudioCard>
 
         {/* fees & CAST economy */}
-        <AxCard title="fees & CAST economy" sub="the platform credit and the cut Technotainment takes">
+        <StudioCard title="fees & CAST economy" sub="the platform credit and the cut technotainment takes">
           <AxSetting settingKey="fees" fields={FEES_FIELDS} initial={{ ...fees }} saveLabel="save fees" />
-          <div style={{ marginTop: 14 }}>
-            <AxHint>
-              CAST is a closed-loop credit. balances are a float liability — changing the rate only affects new purchases,
-              never issued balances. the take rate applies to new creators.
-            </AxHint>
+          <div className="st-hint" style={{ marginTop: 14 }}>
+            CAST is a closed-loop credit. balances are a float liability — changing the rate only affects new purchases,
+            never issued balances. the take rate applies to new creators.
           </div>
-        </AxCard>
+        </StudioCard>
 
         {/* feature flags */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 16 }}>
+        <div className="st-split-even">
           <FlagCard title="live features" sub="on now · flip rollout any time" flags={liveFlags} />
           <FlagCard title="roadmap — flip on when ready" sub="fully built · turning these on needs no code change" flags={roadmapFlags} />
         </div>
 
         {/* regions */}
-        <AxCard title="regions & compliance" sub="where Technotainment operates and the rules that apply" pad={false}>
-          <AxRow cols="1fr 70px 1fr 80px" head first>
+        <StudioCard title="regions & compliance" sub="where technotainment operates and the rules that apply" pad={false}>
+          <div className="st-row head" style={{ gridTemplateColumns: "1fr 90px 1fr 90px" }}>
             <span>region</span>
             <span>currency</span>
             <span>tax</span>
             <span style={{ textAlign: "right" }}>status</span>
-          </AxRow>
+          </div>
           {REGIONS.map((x) => (
-            <AxRow key={x.r} cols="1fr 70px 1fr 80px">
-              <span style={{ fontSize: 13, fontWeight: 600 }}>{x.r}</span>
+            <div key={x.r} className="st-row" style={{ gridTemplateColumns: "1fr 90px 1fr 90px" }}>
+              <span style={{ fontSize: 13.5, fontWeight: 600 }}>{x.r}</span>
               <span className="mono" style={{ fontSize: 12.5, color: "var(--ink-2)" }}>
                 {x.cur}
               </span>
@@ -133,25 +129,27 @@ export default async function AdminSettingsPage() {
                 {x.tax}
               </span>
               <span style={{ textAlign: "right" }}>
-                <AxPill tone={x.status}>{x.label}</AxPill>
+                <Pill tone={x.tone}>{x.label}</Pill>
               </span>
-            </AxRow>
+            </div>
           ))}
-        </AxCard>
+        </StudioCard>
 
         {/* team / RBAC */}
-        <AxCard title="team & roles" sub="who can access the back-office · RBAC + enforced MFA" pad={false}>
+        <StudioCard title="team & roles" sub="who can access the back-office · RBAC + enforced MFA" pad={false}>
           {team.length === 0 ? (
-            <AxEmpty title="no team members" hint="seed the operations team to populate RBAC." />
+            <div className="lower" style={{ padding: "24px 18px", color: "var(--ink-3)", fontSize: 13 }}>
+              no team members — seed the operations team to populate RBAC.
+            </div>
           ) : (
             <>
-              <AxRow cols="1.4fr 1fr 70px" head first>
+              <div className="st-row head" style={{ gridTemplateColumns: "1.4fr 160px 80px" }}>
                 <span>member</span>
                 <span>role</span>
-                <span style={{ textAlign: "right" }}>mfa</span>
-              </AxRow>
+                <span style={{ textAlign: "center" }}>mfa</span>
+              </div>
               {team.map((m) => (
-                <AxRow key={m.id} cols="1.4fr 1fr 70px">
+                <div key={m.id} className="st-row" style={{ gridTemplateColumns: "1.4fr 160px 80px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
                     <span
                       style={{
@@ -183,51 +181,69 @@ export default async function AdminSettingsPage() {
                     </div>
                   </div>
                   <span>
-                    <AxPill tone={m.role === "owner" ? "info" : "neutral"}>{m.role.replace("_", " ")}</AxPill>
+                    <Pill tone={m.role === "owner" ? "info" : "neutral"}>{m.role.replace("_", " ")}</Pill>
                   </span>
-                  <span style={{ textAlign: "right" }}>
+                  <span style={{ textAlign: "center" }}>
                     {m.mfa ? (
-                      <span style={{ color: "#10b981", fontWeight: 900 }}>✓</span>
+                      <Icon name="check" size={16} stroke={2.6} style={{ color: "#10b981" }} />
                     ) : (
                       <span className="lower" style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>
                         off
                       </span>
                     )}
                   </span>
-                </AxRow>
+                </div>
               ))}
             </>
           )}
-        </AxCard>
+        </StudioCard>
 
         {/* audit log */}
-        <AxCard title="audit log" sub="every privileged action, immutable" pad={false}>
+        <StudioCard title="audit log" sub="every privileged action, immutable" pad={false}>
           {audit.length === 0 ? (
-            <AxEmpty title="no audit events yet" hint="privileged actions across the back-office are recorded here." />
+            <div className="lower" style={{ padding: "24px 18px", color: "var(--ink-3)", fontSize: 13 }}>
+              no audit events yet.
+            </div>
           ) : (
-            <>
-              <AxRow cols="1fr 130px 150px" head first>
-                <span>action</span>
-                <span>who</span>
-                <span style={{ textAlign: "right" }}>kind · when</span>
-              </AxRow>
-              {audit.map((e) => (
-                <AxRow key={e.id} cols="1fr 130px 150px">
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{e.action}</span>
-                  <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>
-                    {e.who}
+            audit.map((e, i) => (
+              <div
+                key={e.id}
+                className="st-row"
+                style={{ gridTemplateColumns: "40px 1fr 120px 110px", borderTop: i ? "1px solid var(--hairline)" : "none" }}
+              >
+                <span
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 9,
+                    background: "var(--surface-2)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--ink-3)",
+                  }}
+                >
+                  <Icon name={e.who === "system" ? "settings" : "user"} size={15} stroke={2} />
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{e.action}</span>
+                <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>
+                  {e.who}
+                </span>
+                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                  <Pill tone={KIND_TONE[e.kind] ?? "neutral"}>{e.kind}</Pill>
+                  <span className="lower" style={{ fontSize: 10.5, color: "var(--ink-4)" }}>
+                    {new Date(e.when).toLocaleString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
-                  <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
-                    <AxPill tone={KIND_TONE[e.kind] ?? "neutral"}>{e.kind}</AxPill>
-                    <span className="lower" style={{ fontSize: 10.5, color: "var(--ink-4)" }}>
-                      {new Date(e.when).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </span>
-                </AxRow>
-              ))}
-            </>
+                </div>
+              </div>
+            ))
           )}
-        </AxCard>
+        </StudioCard>
       </div>
     </div>
   );
@@ -243,12 +259,18 @@ function FlagCard({
   flags: Array<{ id: string; label: string; desc: string; on: boolean; rollout: string }>;
 }) {
   return (
-    <AxCard title={title} sub={sub} pad={false}>
+    <StudioCard title={title} sub={sub} pad={false}>
       {flags.length === 0 ? (
-        <AxEmpty title="no flags in this group" />
+        <div className="lower" style={{ padding: "20px 18px", color: "var(--ink-3)", fontSize: 13 }}>
+          no flags in this group.
+        </div>
       ) : (
         flags.map((f, i) => (
-          <AxRow key={f.id} cols="1fr 70px 44px" first={i === 0}>
+          <div
+            key={f.id}
+            className="st-row"
+            style={{ gridTemplateColumns: "1fr 90px 50px", borderTop: i ? "1px solid var(--hairline)" : "none" }}
+          >
             <div style={{ minWidth: 0 }}>
               <div className="lower" style={{ fontSize: 13.5, fontWeight: 700 }}>
                 {f.label}
@@ -257,15 +279,15 @@ function FlagCard({
                 {f.desc}
               </div>
             </div>
-            <span style={{ textAlign: "center" }}>
-              <AxPill tone={f.on ? "info" : "neutral"}>{f.on ? f.rollout : "off"}</AxPill>
-            </span>
-            <span style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ textAlign: "center" }}>
+              <Pill tone={f.on ? "info" : "neutral"}>{f.on ? f.rollout : "off"}</Pill>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <AxFlagToggle id={f.id} on={f.on} />
-            </span>
-          </AxRow>
+            </div>
+          </div>
         ))
       )}
-    </AxCard>
+    </StudioCard>
   );
 }

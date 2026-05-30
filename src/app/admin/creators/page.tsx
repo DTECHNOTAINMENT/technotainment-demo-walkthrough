@@ -1,11 +1,11 @@
 /**
- * Admin creators — two sections: applications (status = review) with
- * approve/decline, and the full roster with status, editable take-rate and a
- * payout-hold toggle. Server component: data via listApplications() +
- * listCreators(). Spec: prototype/v4/admin-users.jsx (AdminCreators).
+ * Admin creators — applications (status = review) with approve/decline, plus the full
+ * roster with status, kyc, editable take-rate and a payout-hold toggle. KPI cards up top.
+ * Server component: data via listApplications() + listCreators(); the action buttons post
+ * to /api/admin/action. Spec: prototype/v4/admin-users.jsx (AdminCreators).
  */
 import { listApplications, listCreators } from "@/lib/queries/admin";
-import { AdPageHead, AdCard, AdEmpty, AdPill, adPagePad, type PillTone } from "@/components/admin/AdPrimitives";
+import { StatCard, StudioCard, StudioPageHead, Pill, type PillTone } from "@/components/studio-ui";
 import { AdApplicationActions, AdCreatorRowActions } from "@/components/admin/AdCreatorActions";
 
 export const dynamic = "force-dynamic";
@@ -22,8 +22,9 @@ const STATUS_LABEL: Record<string, string> = {
   payout_hold: "payout-hold",
   suspended: "suspended",
 };
+const KYC_TONE: Record<string, PillTone> = { verified: "ok", pending: "warn", failed: "live", none: "neutral" };
 
-const ROSTER_COLS = "1.6fr 120px 1fr auto";
+const ROSTER_COLS = "1.5fr 120px 90px 90px auto";
 
 export default async function AdminCreatorsPage() {
   let applications: Awaited<ReturnType<typeof listApplications>> = [];
@@ -35,52 +36,88 @@ export default async function AdminCreatorsPage() {
     failed = true;
   }
 
+  const active = creators.filter((c) => c.status === "active").length;
+  const inReview = creators.filter((c) => c.status === "review").length;
+  const holds = creators.filter((c) => c.status === "payout_hold").length;
+  const avgTake = creators.length
+    ? (creators.reduce((s, c) => s + c.takeRatePct, 0) / creators.length).toFixed(1)
+    : "—";
+
   return (
-    <div style={adPagePad}>
-      <AdPageHead
+    <div className="page-pad" style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <StudioPageHead
         eyebrow="operations"
         title="creators"
         sub="the people earning on technotainment — review applications, then manage status, take-rate and payouts."
       />
 
-      {/* applications */}
-      <AdCard style={{ marginBottom: 20 }}>
-        <div
-          className="lower"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "14px 18px",
-            borderBottom: "1px solid var(--hairline)",
-          }}
-        >
-          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-4)" }}>
-            applications · review identity &amp; risk
-          </span>
-          <AdPill tone="info">{applications.length} pending</AdPill>
-        </div>
+      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
+        <StatCard
+          label="active creators"
+          icon="cast"
+          value={active.toLocaleString("en-GB")}
+          unit="earning"
+          delta="+240"
+          deltaUp
+          fiat="this month"
+          spark={[8.9, 9.1, 9.3, 9.4, 9.5, 9.6, 9.7, 9.84]}
+          sparkColor="#8b5cf6"
+        />
+        <StatCard
+          label="applications"
+          icon="sparkle"
+          value={applications.length.toLocaleString("en-GB")}
+          unit="pending"
+          fiat="awaiting review"
+          spark={[2, 3, 2, 4, 3, 5, 4, applications.length || 1]}
+          sparkColor="#06b6d4"
+        />
+        <StatCard
+          label="in review / hold"
+          icon="eye"
+          value={(inReview + holds).toLocaleString("en-GB")}
+          unit="creators"
+          fiat={`payout-hold: ${holds}`}
+          spark={[2, 1, 2, 1, 1, 1, 1, 1]}
+          sparkColor="#f59e0b"
+        />
+        <StatCard
+          label="avg. take rate"
+          icon="trend"
+          value={`${avgTake}%`}
+          unit="blended"
+          fiat="negotiated per-creator"
+          spark={[12, 12, 12, 11.9, 11.9, 11.8, 11.8, 11.8]}
+          sparkColor="#06b6d4"
+        />
+      </div>
 
+      {/* applications */}
+      <StudioCard
+        title="creator applications"
+        sub="review identity & risk, then approve or decline"
+        action={<Pill tone="info">{applications.length} pending</Pill>}
+        pad={false}
+        style={{ marginTop: 18 }}
+      >
         {failed ? (
-          <AdEmpty>couldn&rsquo;t load applications right now. try refreshing.</AdEmpty>
+          <div className="lower" style={{ padding: "28px 18px", textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
+            couldn&rsquo;t load applications right now. try refreshing.
+          </div>
         ) : applications.length === 0 ? (
-          <AdEmpty>no applications waiting — queue clear.</AdEmpty>
+          <div className="lower" style={{ padding: "28px 18px", textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
+            no applications waiting — queue clear.
+          </div>
         ) : (
           applications.map((ap, i) => (
             <div
               key={ap.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                gap: 12,
-                padding: "14px 18px",
-                alignItems: "center",
-                borderTop: i ? "1px solid var(--hairline)" : "none",
-              }}
+              className="st-row"
+              style={{ gridTemplateColumns: "1fr auto", borderTop: i ? "1px solid var(--hairline)" : "none" }}
             >
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700 }}>{ap.name}</div>
-                <div className="lower tnum" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>
+                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>
                   {ap.id} · {ap.handle} · {ap.category} · {ap.followers.toLocaleString("en-GB")} followers
                 </div>
               </div>
@@ -88,75 +125,82 @@ export default async function AdminCreatorsPage() {
             </div>
           ))
         )}
-      </AdCard>
+      </StudioCard>
 
       {/* roster */}
-      <AdCard>
-        <div
-          className="lower"
-          style={{
-            display: "grid",
-            gridTemplateColumns: ROSTER_COLS,
-            gap: 12,
-            padding: "12px 18px",
-            fontSize: 10.5,
-            fontWeight: 800,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: "var(--ink-4)",
-            borderBottom: "1px solid var(--hairline)",
-            alignItems: "center",
-          }}
-        >
+      <StudioCard pad={false} style={{ marginTop: 16 }}>
+        <div className="st-row head" style={{ gridTemplateColumns: ROSTER_COLS }}>
           <span>creator</span>
           <span>status</span>
           <span>kyc</span>
+          <span style={{ textAlign: "right" }}>take</span>
           <span style={{ textAlign: "right" }}>actions</span>
         </div>
 
         {failed ? (
-          <AdEmpty>couldn&rsquo;t load creators right now. try refreshing.</AdEmpty>
+          <div className="lower" style={{ padding: "28px 18px", textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
+            couldn&rsquo;t load creators right now. try refreshing.
+          </div>
         ) : creators.length === 0 ? (
-          <AdEmpty>no creators yet.</AdEmpty>
+          <div className="lower" style={{ padding: "28px 18px", textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
+            no creators yet.
+          </div>
         ) : (
-          creators.map((c, i) => {
+          creators.map((c) => {
             const payoutHold = c.status === "payout_hold";
             return (
-              <div
-                key={c.id}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: ROSTER_COLS,
-                  gap: 12,
-                  padding: "14px 18px",
-                  alignItems: "center",
-                  borderTop: i ? "1px solid var(--hairline)" : "none",
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {c.name}
-                  </div>
-                  <div className="lower tnum" style={{ fontSize: 11, color: "var(--ink-3)" }}>
-                    {c.id} · {c.channel?.handle ?? c.handle}
+              <div key={c.id} className="st-row" style={{ gridTemplateColumns: ROSTER_COLS }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      flex: "0 0 36px",
+                      background: `linear-gradient(135deg, ${c.brand}, ${c.brand2})`,
+                    }}
+                  />
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {c.name}
+                    </div>
+                    <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>
+                      {c.id} · {c.channel?.handle ?? c.handle}
+                    </div>
                   </div>
                 </div>
-                <span>
-                  <AdPill tone={STATUS_TONE[c.status] ?? "neutral"}>{STATUS_LABEL[c.status] ?? c.status}</AdPill>
-                </span>
-                <span>
-                  <AdPill
-                    tone={c.user.kyc === "verified" ? "ok" : c.user.kyc === "failed" ? "live" : "warn"}
-                  >
-                    {c.user.kyc}
-                  </AdPill>
-                </span>
+                <div>
+                  <Pill tone={STATUS_TONE[c.status] ?? "neutral"}>{STATUS_LABEL[c.status] ?? c.status}</Pill>
+                </div>
+                <div>
+                  <Pill tone={KYC_TONE[c.user.kyc] ?? "neutral"}>{c.user.kyc}</Pill>
+                </div>
+                <div
+                  className="tnum"
+                  style={{
+                    textAlign: "right",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: c.takeRatePct < 12 ? "#8b5cf6" : "var(--ink-1)",
+                  }}
+                >
+                  {c.takeRatePct}%
+                </div>
                 <AdCreatorRowActions id={c.id} takeRatePct={c.takeRatePct} payoutHold={payoutHold} />
               </div>
             );
           })
         )}
-      </AdCard>
+      </StudioCard>
     </div>
   );
 }

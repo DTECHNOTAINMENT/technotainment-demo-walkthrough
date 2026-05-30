@@ -10,6 +10,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { PaymentMethodId } from "@/lib/integrations";
 import { formatCast, formatFiat } from "@/lib/cast";
+import { Icon } from "@/components/ui/Icon";
 import { CARD_METHODS, TOPUP_GROUPS, TOPUP_METHODS, methodById } from "./methods";
 
 const PRESETS = [500, 1000, 2500, 5000, 10000] as const;
@@ -315,6 +316,29 @@ export function TopupFlow() {
             <p className="lower" style={{ margin: 0, fontSize: 13, color: "var(--ink-3)" }}>
               your bank sent a code to authorise {formatFiat(value)} via {methodById(methodId).label}. enter the 6 digits.
             </p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="mono"
+                  style={{
+                    width: 44,
+                    height: 56,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 24,
+                    fontWeight: 800,
+                    borderRadius: 10,
+                    background: "var(--surface-2)",
+                    border: `1px solid ${code[i] ? "var(--hairline-2)" : "var(--hairline)"}`,
+                    color: "var(--ink-1)",
+                  }}
+                >
+                  {code[i] ?? ""}
+                </div>
+              ))}
+            </div>
             <input
               value={code}
               onChange={(e) => {
@@ -323,15 +347,15 @@ export function TopupFlow() {
               }}
               inputMode="numeric"
               maxLength={6}
-              placeholder="······"
+              autoFocus
+              aria-label="6-digit verification code"
               className="mono"
               style={{
                 width: "100%",
-                height: 56,
+                padding: "10px 14px",
                 textAlign: "center",
-                fontSize: 28,
-                letterSpacing: "0.5em",
-                fontWeight: 800,
+                fontSize: 14,
+                letterSpacing: "0.3em",
                 borderRadius: 10,
                 background: "var(--surface-2)",
                 border: "1px solid var(--hairline)",
@@ -378,11 +402,9 @@ export function TopupFlow() {
                   alignItems: "center",
                   justifyContent: "center",
                   color: "white",
-                  fontSize: 28,
-                  fontWeight: 900,
                 }}
               >
-                ✓
+                <Icon name="check" size={28} stroke={3} />
               </div>
               <div className="lower" style={{ marginTop: 14, fontSize: 16, fontWeight: 800 }}>
                 topped up · added to wallet
