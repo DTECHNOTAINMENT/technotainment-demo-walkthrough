@@ -597,6 +597,14 @@ model AdminUser {
   createdAt DateTime  @default(now())
 }
 
+/// Setting — DB-backed config for the Admin control center ("configure, don't code",
+/// CLAUDE.md §4b). Read at runtime; defaults seeded from lib/config. Owner-editable, audited.
+model Setting {
+  key       String   @id // "branding", "fees", "policies", ...
+  valueJson Json
+  updatedAt DateTime @updatedAt
+}
+
 /// ScheduledStream — upcoming streams on a channel. prototype: STUDIO.SCHEDULE
 model ScheduledStream {
   id          String     @id

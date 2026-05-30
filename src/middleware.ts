@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Route protection. Gates the authed app, Studio, and Admin segments.
- * - /studio  → any signed-in user (channel-ownership enforced per-route in Phase 3)
- * - /admin   → staff only; in prod this also asserts SSO + MFA (docs/ROUTES.md).
+ * Route protection (the real gate — pages trust this).
+ * - /admin/signin  → open (staff entry point)
+ * - /admin/*       → staff only; non-staff are sent to /admin/signin
+ * - /studio, /wallet → any signed-in user (channel-ownership enforced per-route)
  *
- * Session/role is read from the `tt_session` cookie, which the AuthProvider sets
- * (mock dev users in dev; Clerk in prod — src/lib/integrations/auth). This stays
- * decoupled so middleware runs on the edge without importing provider SDKs.
+ * Session/role is read from the `tt_session` cookie, set by the AuthProvider
+ * (mock dev users in dev; Clerk in prod). In prod /admin also asserts SSO + MFA.
  * Every /admin mutation additionally writes an AuditEvent at the handler layer.
  */
 
@@ -29,18 +29,25 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const role = readRole(req);
 
-  const needsAuth = pathname.startsWith("/studio") || pathname.startsWith("/admin") || pathname.startsWith("/wallet");
-  if (needsAuth && !role) {
+  // Admin sign-in is the staff entry point — always reachable.
+  if (pathname === "/admin/signin") return NextResponse.next();
+
+  // Admin segment: staff only.
+  if (pathname.startsWith("/admin")) {
+    if (role !== "staff") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/admin/signin";
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
+  // Studio + wallet: any signed-in user.
+  if ((pathname.startsWith("/studio") || pathname.startsWith("/wallet")) && !role) {
     const url = req.nextUrl.clone();
     url.pathname = "/sign-in";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  if (pathname.startsWith("/admin") && role !== "staff") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    url.searchParams.set("error", "staff-only");
     return NextResponse.redirect(url);
   }
 

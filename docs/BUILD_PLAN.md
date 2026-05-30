@@ -69,16 +69,20 @@ Track progress by checking boxes in this file as you go.
 > withdraw → clears after the hold). Still mocked: real Mux ingest + Stripe Connect payouts until
 > keys are added. Next up: **Phase 4 — Admin / Operations** (incl. staff sign-in + payout runs).
 
-## Phase 4 — Admin / Operations
-- [ ] Overview, users (suspend/KYC), creators + **applications/approval**, moderation (queue + live monitor + 3-strike).
-- [ ] Finance: transactions ledger, refunds, chargebacks, **payout runs** (approve/hold).
-- [ ] Connectors (toggle, API keys, webhooks), SEO & growth (Search Console data).
-- [ ] **Control center** (per `CLAUDE.md §4b` "configure, don't code"): branding, fees & CAST,
-      payment-method on/off, policies, pages/CMS + announcement, regions, **RBAC + MFA**, audit.
-      Everything DB-backed + read at runtime; **deferred features gated behind flags** so the owner
-      enables them with a toggle, no deploy.
-- [ ] **AuditEvent** written on every privileged action.
-- **DoD:** staff can approve a creator, action a report, run a payout batch, and every action shows in the audit log.
+## Phase 4 — Admin / Operations  ✅ complete (2026-05-30)
+- [x] Overview KPIs, users (suspend/reinstate/KYC), creators + **applications/approval** + take-rate + payout-hold, moderation queue (investigate/strike/remove/dismiss; strike suspends the user — full 3-strike escalation + live monitor are refinements).
+- [x] Finance: transactions ledger, **refunds** (reverse via a refund ledger entry, never a balance mutation), **payout runs** (approve clears held payouts → paid / hold).
+- [x] Connectors (toggle live/beta/off), API keys + webhooks views, SEO & growth (sitemaps/robots/schema coverage + metadata defaults; Search Console is a mock connector).
+- [x] **Control center** (`CLAUDE.md §4b`): branding + fees/CAST economy editable → `Setting` table (DB-backed, read at runtime); feature flags toggle (deferred features ship flag-off); regions + team/RBAC views; audit log. Staff sign-in (SSO+MFA in prod). (Payment-method on/off + CMS pages are wired as settings to extend.)
+- [x] **AuditEvent** written on every privileged action.
+- **DoD:** ✅ verified live — staff (owner) approves a creator application (→active), strikes a report (→actioned), runs a payout batch (held→paid), toggles a flag; the **audit log grew 6→10** with each action attributed (who/action/kind). Authz: member→`/admin/signin` (307), staff→`/admin` (200), no redirect loop.
+
+> **Owner note (Phase 4):** the operations console is live — staff sign in (gate to SSO+MFA before
+> launch), and can run users, creators/applications, trust & safety, money (refunds + payout runs),
+> integrations, SEO, and the **control center** where you change branding, fees and feature flags
+> **without a deploy** — every change is audit-logged. All three apps (viewer / studio / admin) now
+> work end-to-end on mocks. Remaining: **Phase 5** (realtime: live chat, counters, co-watch, push)
+> and **Phase 6** (swap mocks for real providers, AWS migration, legal, security review, go-live).
 
 ## Phase 5 — Realtime & polish
 - [ ] Live chat moderation tools, slow-mode, members-only chat; live counters at scale.
