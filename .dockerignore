@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.github
+npm-debug.log*
+.env
+.env.*
+!.env.example
+prototype
+docs
+infra
+*.md
+.DS_Store
+coverage

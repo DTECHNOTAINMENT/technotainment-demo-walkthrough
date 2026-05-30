@@ -1,50 +1,85 @@
-# Technotainment — Metascape v4 (live prototype)
+# Technotainment — Metascape
 
-This repo hosts the **Metascape v4** interactive prototype for **Technotainment** — a
-creator live-streaming + VOD platform built around **CAST**, a closed-loop platform credit
-(**100 CAST = £1.00**).
+Creator live-streaming + VOD platform built around **CAST**, a closed-loop platform credit
+(**100 CAST = £1.00**). Fans watch live & on-demand and spend CAST on memberships, tips, drops,
+PPV and gifts. Creators run a **Studio**; staff run an **Admin/Operations** console.
 
-Live site:
-https://dtechnotainment.github.io/technotainment-demo-walkthrough/
+This repo is being built from the design handoff into a **production Next.js app**, phase by
+phase per `docs/BUILD_PLAN.md`. The original interactive prototype (the product spec) is preserved
+under [`prototype/`](./prototype/).
 
-## What this contains
+> **Status: Phase 0 — Foundation & scaffold.** See progress at the bottom of `docs/BUILD_PLAN.md`.
 
-`index.html` is the self-contained Metascape v4 app (React 18 UMD + in-browser Babel, no build
-step). It ships **three first-class modes**, each a full app with its own navigation and routing:
+## Stack (locked — `docs/DECISIONS.md §1`)
 
-- **Viewer** (default) — home, live watch, channel/microcast pages, search, wallet + top-up,
-  profile + consent.
-- **Creator Studio** — sidebar → "creator studio" (or Profile → become a creator): dashboard,
-  go-live control room, content + per-video editor, store/drops, audience, memberships/tiers,
-  analytics, earnings/payouts, settings, onboarding.
-- **Admin / Operations** — Profile → "operations" *(open for demo; gate to staff in prod)*:
-  overview, users, moderation, finance, connectors, SEO & growth, control center, settings.
+Next.js (App Router) + TypeScript · PostgreSQL/Prisma · Redis · Tailwind (tokens ported from the
+prototype's `theme.css`) · mock-first integrations (Stripe, Mux, Clerk, Persona, …) · Docker /
+ECS-Fargate target, AWS-portable from day one.
 
-Toggle light/dark from the top bar. State persists in `localStorage` (`metascape-v4-*` keys).
+## Conventions
+
+- **Money is integer CAST** — never floats; convert to fiat only at the edge (`src/lib/cast.ts`).
+- **Balance is a derived, append-only ledger** (`src/lib/ledger.ts` → `WalletEntry`), never a
+  mutable number.
+- **Configure, don't code** — owner-changeable values are DB-backed Admin settings, not literals
+  (`CLAUDE.md §4b`). Phase 0 seeds defaults in `src/lib/config.ts`.
+- **Mock-first integrations** — every external service sits behind an interface with a mock
+  (`src/lib/integrations/*`); real providers swap in by setting one env var
+  (`docs/INTEGRATIONS.md`). The app always boots and demos with zero real accounts.
+- **AWS-portable** — config via env only, stateless app, `output: "standalone"`
+  (`docs/INFRASTRUCTURE.md`).
+
+## Run it
+
+```bash
+npm install
+cp .env.example .env.local        # all blank keys → app runs on mocks
+npm run dev                        # http://localhost:3000
+```
+
+With local services (Postgres + Redis):
+
+```bash
+docker compose up db redis -d
+# set DATABASE_URL / REDIS_URL in .env.local (see docker-compose.yml)
+npx prisma migrate dev             # apply schema
+npm run db:seed                    # load the prototype fixtures
+npm run dev
+```
+
+Full container parity (proves AWS-portability):
+
+```bash
+docker compose up --build          # app + db + redis; GET /api/health → 200
+```
+
+## Scripts
+
+| Script | Does |
+|---|---|
+| `npm run dev` | dev server |
+| `npm run build` | `prisma generate` + production build (`standalone`) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | `next lint` |
+| `npm test` | Vitest unit tests (money + ledger paths) |
+| `npm run db:seed` | seed DB from prototype fixtures |
 
 ## Layout
 
 ```
-index.html         Metascape v4 entry — loads v4/*.jsx
-v4/                all prototype modules (viewer + studio + admin + payments)
-  theme.css        design tokens (dark-first, data-theme)
-  studio.css       additive studio/admin styles
-assets/            butterfly + logo marks used by the app (plus brand SVGs)
-manifesto.html     the earlier creator-owned-entertainment thesis landing page
+src/app/            App Router routes (+ /api/health)
+src/components/      shared UI (theme provider/toggle)
+src/lib/            config, cast money helpers, CAST ledger, db, redis, observability
+src/lib/integrations/  ports & adapters — one folder per external service (mock + real)
+prisma/             schema.prisma (from docs/DATA_MODEL.md) + seed.ts (from fixtures)
+infra/              Terraform skeleton for the AWS target
+docs/               the build directions (READINESS, DECISIONS, BUILD_PLAN, TEAM, …)
+prototype/          the original interactive prototype (product spec) + earlier iterations
+CLAUDE.md           standing brief — read first
 ```
 
-## Local preview
+## Docs (read in this order)
 
-It's a static site — serve it and open `index.html`.
-
-```bash
-python3 -m http.server 8000
-# open http://127.0.0.1:8000/
-```
-
-## Notes
-
-- This is a **prototype** (front-end fixtures, simulated payments/streaming, toasts instead of
-  writes). It is the **product spec**, not the production stack — the production target is
-  Next.js (App Router) + TypeScript with SSR/ISR for SEO.
-- All people, IDs, amounts, orders, entitlements and payout references are demo data.
+`docs/READINESS.md` → `CLAUDE.md` → `docs/DECISIONS.md` → `docs/BUILD_PLAN.md` → `docs/TEAM.md` →
+`docs/INTEGRATIONS.md` → `docs/INFRASTRUCTURE.md` → `HANDOFF.md` → `docs/DATA_MODEL.md` →
+`docs/ROUTES.md` → `.env.example`.

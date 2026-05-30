@@ -1,0 +1,87 @@
+# Build Plan — Technotainment
+
+A sequenced, self-verifiable plan for building the production app **autonomously**. Work top to
+bottom. Each phase has a **Definition of Done (DoD)** — don't advance until every box is checked
+and tests are green. Every integration starts as a **mock** so the app always boots and demos
+without real keys; swap real providers in when the owner supplies them (`docs/FOR_THE_OWNER.md`).
+
+> Spec for any screen = its `.jsx` file in `v4/`. Data shapes = `docs/DATA_MODEL.md`.
+> URLs + render modes = `docs/ROUTES.md`. Locked choices = `docs/DECISIONS.md`.
+> **Build each feature as a team** (PO → UX → Frontend → Backend → QA → Security → Release) per
+> `docs/TEAM.md`; the QA pass + report is mandatory before a feature counts as done.
+
+Track progress by checking boxes in this file as you go.
+
+---
+
+## Phase 0 — Foundation & scaffold  ✅ complete (2026-05-30)
+- [x] Next.js + TS + Tailwind app boots; `theme.css` tokens ported as CSS vars; `data-theme` light/dark works.
+- [x] Prisma schema from `docs/DATA_MODEL.md` (24 models + enums); migration `init` applies; seed loads the prototype fixtures (verified: @mira.k derives **12,480 CAST**).
+- [x] Role-gated middleware; `/admin` → staff, `/studio`/`/wallet` → authed (verified: `/admin` 307→`/sign-in`). Auth behind a mock `AuthProvider` (Clerk gate) — full sign-in UI is Phase 2.
+- [x] **CAST ledger**: append-only `WalletEntry`; balance derived, never mutated; overdraw-guarded. Unit-tested (12 money/ledger tests green).
+- [x] Provider interfaces + **mock** implementations for 17 domains (payments, media, auth, kyc, email, sms, push, risk, content-id, moderation, tax, flags, storage, queue, analytics, search-console) — per `docs/INTEGRATIONS.md`. One env var gates each; absent key → mock. `registry.ts` + `launch-check.ts` enforce required providers when `LAUNCH_MODE=prod`.
+- [x] **AWS-ready scaffold** (`docs/INFRASTRUCTURE.md` §2): `Dockerfile` + `.dockerignore`, `next.config output:"standalone"`, `/api/health` (DB+Redis), S3-compatible `StorageProvider`, `QueueProvider` stub, `docker-compose.yml` (Postgres+Redis), `infra/` Terraform skeleton. Config via env only; stateless app.
+- [x] CI green: typecheck, lint, unit tests, build (GitHub Actions). Sentry + PostHog wired as env-gated no-op stubs (`src/lib/observability.ts`).
+- **DoD:** ✅ app builds (`next build`, standalone) and runs against local Postgres+Redis; `/api/health` → `200 {db:ok,redis:ok}`; the seeded user shows a live CAST balance from the ledger. ⏳ Vercel preview deploy is owner-side (connect the repo to Vercel — see `docs/FOR_THE_OWNER.md`).
+
+> **Owner note (Phase 0):** the foundation is built and verified locally. What works: the app boots
+> dark/light, the CAST ledger derives balances correctly, every external service runs on mocks (no
+> accounts needed), and it's container/AWS-portable. What's mocked: all providers (Stripe, Mux, Clerk,
+> …) until you supply keys. What I need from you: nothing yet — optionally connect the repo to Vercel
+> for a live preview URL. Next up: **Phase 1 — public pages + SEO**.
+
+## Phase 1 — Public pages + SEO  *(highest growth leverage — do early)*
+- [ ] `/c/:handle`, `/watch/:slug`, `/clip/:slug`, `/explore/:category`, `/live` — all **SSR/ISR**.
+- [ ] schema.org JSON-LD per `docs/ROUTES.md`; canonical, OG/Twitter tags, dynamic OG images.
+- [ ] Dynamic sitemaps (creators/videos/clips/categories) + robots.txt; 301 legacy redirects.
+- [ ] Core Web Vitals budgets met (LCP<2.5s, CLS<0.1, INP<200ms) on watch + channel pages.
+- **DoD:** a video page renders server-side with valid structured data (Rich Results test passes) and appears in a sitemap.
+
+## Phase 2 — Viewer app + money in
+- [ ] Home, following, library, search, notifications, profile + **consent** model.
+- [ ] Wallet + **top-up** (Stripe: cards + Apple/Google Pay; 3DS for cards, express skips it).
+- [ ] Saved payment methods; follow / subscribe(tier) / tip / gift / buy product → ledger entries + receipts.
+- [ ] Stripe webhooks (`payment.*`) verified + idempotent; failed/recovered states handled.
+- **DoD:** a fan tops up with a Stripe **test** card, spends CAST on a tip and a membership, and the ledger + receipts are correct.
+
+## Phase 3 — Creator Studio
+- [ ] Onboarding mints a **fresh empty channel** (not the Nyx demo) + first tier + payout method.
+- [ ] Content: upload via Mux (direct upload), processing states, per-video editor incl. **SEO fields**.
+- [ ] Go-live: stream key (rotatable), Mux ingest, live chat + viewer counts (Redis), recording → VOD.
+- [ ] Store/drops, memberships/tiers, audience, analytics.
+- [ ] **Earnings/payouts:** withdraw via Stripe Connect; 7-day hold; statements; KYC (Persona) before first payout.
+- **DoD:** a creator uploads a video, goes live (test), sells a membership, and requests a payout that clears in test mode.
+
+## Phase 4 — Admin / Operations
+- [ ] Overview, users (suspend/KYC), creators + **applications/approval**, moderation (queue + live monitor + 3-strike).
+- [ ] Finance: transactions ledger, refunds, chargebacks, **payout runs** (approve/hold).
+- [ ] Connectors (toggle, API keys, webhooks), SEO & growth (Search Console data).
+- [ ] **Control center** (per `CLAUDE.md §4b` "configure, don't code"): branding, fees & CAST,
+      payment-method on/off, policies, pages/CMS + announcement, regions, **RBAC + MFA**, audit.
+      Everything DB-backed + read at runtime; **deferred features gated behind flags** so the owner
+      enables them with a toggle, no deploy.
+- [ ] **AuditEvent** written on every privileged action.
+- **DoD:** staff can approve a creator, action a report, run a payout batch, and every action shows in the audit log.
+
+## Phase 5 — Realtime & polish
+- [ ] Live chat moderation tools, slow-mode, members-only chat; live counters at scale.
+- [ ] Co-watch "small rooms" (LiveKit). Push notifications for go-live/drops.
+- [ ] i18n scaffold, rate limiting, error boundaries, load test on live paths.
+- **DoD:** 1k-concurrent live test passes; chat + counters stable; alerts fire.
+
+## Phase 6 — Launch readiness
+- [ ] Swap remaining mocks for real providers (owner keys); production webhooks verified.
+- [ ] **AWS migration (when ready):** stand up the `infra/` Terraform (RDS, ElastiCache, S3, ECS/CloudFront), push image to ECR, point env at AWS services. App code unchanged (it was built portable).
+- [ ] Legal pages (ToS/Privacy), cookie/consent banner, security review, backup/restore tested.
+- [ ] Tax (Avalara/DAC7) + payout compliance live; fraud rules (Sift) tuned.
+- [ ] Owner UAT on the full happy path; **owner sign-off before real money/users**.
+- **DoD:** a real end-to-end transaction works in production with real payout, and the owner has approved go-live.
+
+---
+
+## Working agreement (autonomous mode)
+- After each phase: run the full test suite, deploy a preview, and post a short plain-language
+  progress note (what works now, what's mocked, what you need from the owner).
+- Keep the app **always runnable** — never leave `main` in a broken state; use feature branches.
+- When blocked only by a real-world item (key, bank, legal), **stub it, keep building**, and add it
+  to the owner checklist rather than stopping.
