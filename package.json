@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "vercel-build": "prisma generate && (test -n \"$DATABASE_URL\" && prisma migrate deploy && prisma db seed || true) && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",

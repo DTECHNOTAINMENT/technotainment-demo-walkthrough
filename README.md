@@ -29,7 +29,27 @@ ECS-Fargate target, AWS-portable from day one.
 - **AWS-portable** — config via env only, stateless app, `output: "standalone"`
   (`docs/INFRASTRUCTURE.md`).
 
-## Run it
+## Review it through a link
+
+**A. The code + verified build** — open the pull request: the diff, per-phase Definition-of-Done
+checks in `docs/BUILD_PLAN.md`, and the file tree. No setup.
+
+**B. Click through the running app (live preview)** — one-time Vercel deploy (the app needs a DB):
+1. Import this repo at [vercel.com/new](https://vercel.com/new).
+2. Add two free integrations from the Vercel dashboard → Storage/Integrations: **Neon** (Postgres,
+   sets `DATABASE_URL`) and **Upstash** (Redis, sets `REDIS_URL`). Optionally set `SESSION_SECRET`
+   (any 32+ char string) and `APP_URL` (your Vercel URL).
+3. Deploy. The build (`npm run vercel-build`) runs the migrations and seeds demo data automatically,
+   so the preview opens fully populated. Everything runs on mocks — no provider keys needed.
+   - Sign in: `/sign-in` (one-click seeded users) · Studio: a creator account → `/studio` ·
+     Admin: `/admin/signin`.
+
+**C. Instant visual of the original prototype** — enable Pages once (repo Settings → Pages → Source
+= "GitHub Actions"); the `deploy-prototype-pages` workflow publishes `prototype/` to
+`https://dtechnotainment.github.io/technotainment-demo-walkthrough/`. (This is the design spec; the
+production app above is the real build.)
+
+## Run it locally
 
 ```bash
 npm install
