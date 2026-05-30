@@ -50,6 +50,25 @@ export async function listLiveStreams() {
   });
 }
 
+/** Recent published public VODs across all channels — powers the home grid + anon front door. */
+export async function listRecentVideos(take = 18) {
+  return prisma.video.findMany({
+    where: { status: "published", visibility: "public", kind: "vod" },
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    take,
+    include: { channel: { include: { creator: true } } },
+  });
+}
+
+/** Top creators (with their channel) — used for the anon sidebar "following" stand-in. */
+export async function listTopCreators(take = 12) {
+  return prisma.creator.findMany({
+    orderBy: { followers: "desc" },
+    take,
+    include: { channel: { include: { streams: { where: { status: "live" }, take: 1 } } } },
+  });
+}
+
 export async function listExplore(category: string) {
   const videos = await prisma.video.findMany({
     where: {
