@@ -1,43 +1,50 @@
-# Technotainment / Strmit Clickable Demo
+# Technotainment — Metascape v4 (live prototype)
 
-Public-safe clickable prototype for Strmit v1.
+This repo hosts the **Metascape v4** interactive prototype for **Technotainment** — a
+creator live-streaming + VOD platform built around **CAST**, a closed-loop platform credit
+(**100 CAST = £1.00**).
 
 Live site:
 https://dtechnotainment.github.io/technotainment-demo-walkthrough/
 
 ## What this contains
 
-This is no longer a static brochure. It is a self-contained clickable HTML prototype covering:
+`index.html` is the self-contained Metascape v4 app (React 18 UMD + in-browser Babel, no build
+step). It ships **three first-class modes**, each a full app with its own navigation and routing:
 
-- Audience discovery and paid access flow
-- Creator application, onboarding, profile, offer, media, and dashboard flow
-- Admin approval, payment/access diagnosis, entitlement repair, payout export/recording, support, and audit flow
-- Component/state board for access banners, status pills, repair forms, ledger rows, payout rows, and audit language
-- Business review checklist for go/no-go before production coding
+- **Viewer** (default) — home, live watch, channel/microcast pages, search, wallet + top-up,
+  profile + consent.
+- **Creator Studio** — sidebar → "creator studio" (or Profile → become a creator): dashboard,
+  go-live control room, content + per-video editor, store/drops, audience, memberships/tiers,
+  analytics, earnings/payouts, settings, onboarding.
+- **Admin / Operations** — Profile → "operations" *(open for demo; gate to staff in prod)*:
+  overview, users, moderation, finance, connectors, SEO & growth, control center, settings.
 
-All people, IDs, amounts, support tickets, orders, entitlements, and payout references are demo data.
+Toggle light/dark from the top bar. State persists in `localStorage` (`metascape-v4-*` keys).
 
-## V1 constraints reflected
+## Layout
 
-- No blockchain/token framing
-- No cart
-- No merch
-- No audience wallet
-- One offer per order
-- Entitlement is access truth, not provider redirect
-- Manual payouts happen outside product and are recorded in Strmit
-- Creator onboarding is admin-approved/cohort-based
-- Admin repair requires reason and audit trail
+```
+index.html         Metascape v4 entry — loads v4/*.jsx
+v4/                all prototype modules (viewer + studio + admin + payments)
+  theme.css        design tokens (dark-first, data-theme)
+  studio.css       additive studio/admin styles
+assets/            butterfly + logo marks used by the app (plus brand SVGs)
+manifesto.html     the earlier creator-owned-entertainment thesis landing page
+```
 
 ## Local preview
 
+It's a static site — serve it and open `index.html`.
+
 ```bash
-python3 -m http.server 4173
-# open http://127.0.0.1:4173/
+python3 -m http.server 8000
+# open http://127.0.0.1:8000/
 ```
 
-## Files
+## Notes
 
-- `index.html` — self-contained clickable prototype
-- `assets/technotainment-logo.svg` — Technotainment logo
-- `assets/technotainment-symbol.svg` — Technotainment symbol
+- This is a **prototype** (front-end fixtures, simulated payments/streaming, toasts instead of
+  writes). It is the **product spec**, not the production stack — the production target is
+  Next.js (App Router) + TypeScript with SSR/ISR for SEO.
+- All people, IDs, amounts, orders, entitlements and payout references are demo data.
