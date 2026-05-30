@@ -99,19 +99,20 @@ Track progress by checking boxes in this file as you go.
 > launch readiness** (real provider keys, AWS, legal, security review, go-live) — this one needs you.
 
 ## Phase 6 — Launch readiness  🟡 prep complete · remaining items owner-gated
-- [~] Swap mocks for real providers — **owner-gated (keys)**. Enforced: `instrumentation.ts` refuses to boot in `LAUNCH_MODE=prod` until all 9 required providers are configured; `/api/ready` surfaces per-connector status (mock|live|error). Each adapter flips to real with one env var — no code change.
+- [x] **Add providers from the Admin panel, no redeploy (configure, don't code).** The app ALWAYS boots — dev *and* prod — running on mocks for anything unconfigured (`instrumentation.ts` only logs what's still mocked, never blocks). Connector keys are stored in the DB (`lib/connectors.ts` → Setting `connector:<id>`) and managed in **Admin → connectors** (paste keys + enable); `connectorRuntimeStatus` reads them at runtime, so a connector goes **mock → live** the moment the owner saves — env vars remain a fallback for CI/IaC. `/api/ready` is a non-blocking go-live checklist. Real adapter implementations (per provider) read their keys via `getConnectorCredentials(id)` — an isolated add-later task that needs no call-site changes.
 - [~] **AWS migration** — **scaffolded + owner-gated (AWS account)**. `infra/` Terraform skeleton, multi-stage `Dockerfile` (standalone), `docker-compose`, env-only config, `/api/health`. Migration is build-image → ECR → point env at AWS — app code unchanged (built portable).
 - [x] **Legal pages** (ToS / Privacy / Guidelines at `/legal/:doc`, CMS-editable via Setting, clearly marked **draft — lawyer review required**) + **cookie/consent banner**. [~] **Security review** — self-review of the money/auth/admin boundaries done (authz tested; secrets server-only; overdraw guard; idempotent webhook; rate limits; audit log); a formal third-party pen-test is owner-gated. [~] **Backup/restore** — standard `pg_dump`/PITR procedure; needs real infra to exercise.
 - [~] Tax (Avalara) + fraud (Sift) — adapters present (mock); **owner-gated (keys)**.
 - [ ] Owner UAT + **sign-off before real money/users** — **owner action**.
 - **DoD:** ⏳ owner-gated — a real end-to-end transaction in production with a real payout, plus owner go-live approval. Everything that does **not** require owner-supplied accounts is built and verified; the remaining items are the `docs/FOR_THE_OWNER.md` checklist.
 
-> **Owner note (Phase 6):** the app is **launch-ready in structure** — it just needs your real-world
-> accounts. A production boot is *blocked by design* until every required service (Stripe, Mux, Clerk,
-> Persona, email, SMS, tax, storage) has real keys, so you can't go live on test stand-ins by accident.
-> What only you can do (see `docs/FOR_THE_OWNER.md`): a domain, a registered company + bank, the
-> provider sign-ups (keys), lawyer-reviewed ToS/Privacy, an AWS account when you migrate, and the
-> final go-live approval. Until then everything runs and demos on mocks.
+> **Owner note (Phase 6):** the app **launches and runs right now**, on mocks, in any environment —
+> nothing blocks it. You go live **one connector at a time, from the Admin panel**: open
+> Admin → connectors, paste a provider's keys (Stripe, Mux, Clerk, …), and flip it on — that connector
+> switches from the stand-in to the real thing immediately, no redeploy, and it's audit-logged.
+> `/api/ready` shows you what's still on a stand-in. What only you can do (see `docs/FOR_THE_OWNER.md`):
+> a domain, a registered company + bank, the provider sign-ups (keys), lawyer-reviewed ToS/Privacy,
+> an AWS account when you migrate, and the final go-live approval.
 
 ---
 

@@ -1,29 +1,34 @@
 import { NextResponse } from "next/server";
-import { CONNECTORS, connectorStatus, missingRequiredProviders } from "@/lib/integrations";
+import { CONNECTORS } from "@/lib/integrations";
+import { connectorRuntimeStatus } from "@/lib/connectors";
 import { LAUNCH_MODE } from "@/lib/config";
 
 /**
- * Launch-readiness probe (Phase 6). Reports per-connector status (mock | live | error) and,
- * in prod, whether every required provider is configured. Distinct from /api/health (liveness):
- * this is the go-live checklist surfaced as JSON for the owner + the Admin → connectors view.
+ * Launch-readiness checklist (informational — never blocks the app). Reports each connector's
+ * runtime status (live | mock), considering Admin-panel config + env. The owner uses this to see
+ * what's still on a stand-in; the app runs regardless. Distinct from /api/health (liveness).
  */
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const connectors = CONNECTORS.map((c) => ({
-    id: c.id,
-    name: c.name,
-    category: c.category,
-    requiredForLaunch: c.requiredForLaunch,
-    status: connectorStatus(c.id),
-  }));
-  const missing = missingRequiredProviders();
-  const ready = LAUNCH_MODE !== "prod" ? true : missing.length === 0;
+  const connectors = await Promise.all(
+    CONNECTORS.map(async (c) => ({
+      id: c.id,
+      name: c.name,
+      category: c.category,
+      requiredForLaunch: c.requiredForLaunch,
+      status: await connectorRuntimeStatus(c.id),
+    })),
+  );
+  const missingRequired = connectors.filter((c) => c.requiredForLaunch && c.status === "mock").map((c) => c.id);
 
   return NextResponse.json({
     launchMode: LAUNCH_MODE,
-    ready,
-    missingRequired: missing,
+    // The app always runs; "fullyLive" just means every required connector is configured.
+    fullyLive: missingRequired.length === 0,
+    liveCount: connectors.filter((c) => c.status === "live").length,
+    total: connectors.length,
+    missingRequired,
     connectors,
   });
 }

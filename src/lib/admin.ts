@@ -123,6 +123,37 @@ export async function toggleConnector(who: string, id: string, status: "live" | 
   await prisma.connector.update({ where: { id }, data: { status } });
   await writeAudit({ who, action: `connector ${id} → ${status}`, kind: "config" });
 }
+
+/**
+ * Save a connector's credentials + enabled flag from the Admin panel (configure, don't code).
+ * Stored in the Setting table (`connector:<id>`), read at runtime by lib/connectors — so the
+ * owner switches a connector live by pasting keys here, no env var and no redeploy.
+ */
+export async function setConnectorCredentials(
+  who: string,
+  id: string,
+  input: { enabled: boolean; credentials: Record<string, string> },
+) {
+  // Don't persist blank values; trim everything.
+  const credentials: Record<string, string> = {};
+  for (const [k, v] of Object.entries(input.credentials ?? {})) {
+    if (typeof v === "string" && v.trim()) credentials[k] = v.trim();
+  }
+  const enabled = input.enabled && Object.keys(credentials).length > 0;
+  await prisma.setting.upsert({
+    where: { key: `connector:${id}` },
+    create: { key: `connector:${id}`, valueJson: { enabled, credentials } },
+    update: { valueJson: { enabled, credentials } },
+  });
+  // Reflect in the Connector row so the registry view shows live/off without a key read.
+  await prisma.connector.update({ where: { id }, data: { status: enabled ? "live" : "off" } }).catch(() => {});
+  await writeAudit({
+    who,
+    action: `configured connector ${id} (${enabled ? "enabled" : "saved"}, ${Object.keys(credentials).length} keys)`,
+    kind: "config",
+  });
+  return { enabled, keyCount: Object.keys(credentials).length };
+}
 export async function toggleFlag(who: string, id: string, on: boolean) {
   await prisma.featureFlag.update({ where: { id }, data: { on } });
   await writeAudit({ who, action: `flag ${id} → ${on ? "on" : "off"}`, kind: "config" });

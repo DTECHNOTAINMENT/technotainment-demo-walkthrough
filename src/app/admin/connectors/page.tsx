@@ -6,6 +6,8 @@
 import { listConnectors, listApiKeys, listWebhooks } from "@/lib/queries/admin";
 import { AxPageHead, AxCard, AxRow, AxPill, AxEmpty, AxHint, type Tone, AX_PAGE } from "@/components/admin-x/AxPrimitives";
 import { AxConnectorToggle } from "@/components/admin-x/AxConnectorToggle";
+import { AxConnectorConfig } from "@/components/admin-x/AxConnectorConfig";
+import { connectorEnvKeys, getConnectorConfig, connectorRuntimeStatus } from "@/lib/connectors";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +35,17 @@ export default async function AdminConnectorsPage() {
     byCat.get(c.cat)!.push(c);
   }
 
-  const liveCount = connectors.filter((c) => c.status === "live").length;
+  // Runtime config (DB-backed) per connector, so the panel can show/edit keys + live status.
+  const configById = new Map(
+    await Promise.all(
+      connectors.map(async (c) => {
+        const [cfg, status] = await Promise.all([getConnectorConfig(c.id), connectorRuntimeStatus(c.id)]);
+        return [c.id, { envKeys: connectorEnvKeys(c.id), enabled: cfg?.enabled ?? false, filled: Object.keys(cfg?.credentials ?? {}), status }] as const;
+      }),
+    ),
+  );
+
+  const liveCount = connectors.filter((c) => configById.get(c.id)?.status === "live").length;
 
   return (
     <div style={AX_PAGE}>
@@ -57,24 +69,37 @@ export default async function AdminConnectorsPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
             {cats.map((cat) => (
               <AxCard key={cat} title={cat} sub={`${byCat.get(cat)!.length} provider(s)`} pad={false}>
-                {byCat.get(cat)!.map((c, i) => (
-                  <AxRow key={c.id} cols="minmax(0,1fr) 220px" first={i === 0}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800 }}>{c.name}</div>
-                      <div className="lower" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2, lineHeight: 1.45 }}>
-                        {c.desc}
-                      </div>
-                      {c.events && (
-                        <div className="mono" style={{ fontSize: 10.5, color: "var(--ink-4)", marginTop: 4 }}>
-                          {c.events}
+                {byCat.get(cat)!.map((c, i) => {
+                  const cfg = configById.get(c.id)!;
+                  return (
+                    <AxRow key={c.id} cols="minmax(0,1fr) 220px" first={i === 0}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
+                          {c.name}
+                          <AxPill tone={cfg.status === "live" ? "ok" : "neutral"}>{cfg.status}</AxPill>
                         </div>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                      <AxConnectorToggle id={c.id} status={c.status} />
-                    </div>
-                  </AxRow>
-                ))}
+                        <div className="lower" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2, lineHeight: 1.45 }}>
+                          {c.desc}
+                        </div>
+                        {c.events && (
+                          <div className="mono" style={{ fontSize: 10.5, color: "var(--ink-4)", marginTop: 4 }}>
+                            {c.events}
+                          </div>
+                        )}
+                        <AxConnectorConfig
+                          id={c.id}
+                          envKeys={cfg.envKeys}
+                          enabled={cfg.enabled}
+                          filled={cfg.filled}
+                          status={cfg.status}
+                        />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <AxConnectorToggle id={c.id} status={c.status} />
+                      </div>
+                    </AxRow>
+                  );
+                })}
               </AxCard>
             ))}
           </div>

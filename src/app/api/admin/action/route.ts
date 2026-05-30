@@ -45,6 +45,13 @@ export async function POST(req: Request) {
         }
         return bad();
       case "connector":
+        if (action === "configure")
+          return NextResponse.json(
+            await admin.setConnectorCredentials(who, String(b.id), {
+              enabled: Boolean(b.enabled),
+              credentials: (b.credentials ?? {}) as Record<string, string>,
+            }),
+          );
         await admin.toggleConnector(who, String(b.id), b.status as "live" | "beta" | "off");
         break;
       case "flag":
