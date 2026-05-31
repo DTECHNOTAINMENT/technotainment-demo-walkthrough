@@ -66,6 +66,27 @@ export default async function ProfilePage() {
         </div>
       </div>
 
+      {/* entry points to the other two apps — creator studio + staff operations (prototype: profile.jsx) */}
+      <div className="card" style={{ padding: 18, background: "var(--surface)", display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div className="lower" style={{ fontWeight: 800, fontSize: 15 }}>switch workspace</div>
+          <p style={{ margin: "4px 0 0", color: "var(--ink-3)", fontSize: 12.5, lineHeight: 1.5 }}>
+            run a channel in the creator studio, or open the staff operations console.
+          </p>
+        </div>
+        <Link href="/studio" className="btn btn-glass lower" style={{ padding: "10px 16px", fontSize: 13 }}>
+          <Icon name="cast" size={14} stroke={2.2} /> creator studio
+        </Link>
+        <Link
+          href="/admin/signin"
+          className="btn btn-glass lower"
+          style={{ padding: "10px 16px", fontSize: 13, color: "#ef4444", borderColor: "rgba(239,68,68,0.35)" }}
+          title="company back-office (staff only)"
+        >
+          <Icon name="settings" size={14} stroke={2.2} /> operations
+        </Link>
+      </div>
+
       {/* consent intro */}
       <div className="card" style={{ padding: 18, background: "var(--surface)" }}>
         <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
