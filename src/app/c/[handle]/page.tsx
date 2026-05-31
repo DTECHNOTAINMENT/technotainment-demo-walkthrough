@@ -11,11 +11,13 @@ import { buildMetadata, clampDescription } from "@/lib/seo/meta";
 import { person, breadcrumb, product } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { VideoCard } from "@/components/public/cards";
+import { VideoPlayer } from "@/components/VideoPlayer";
 import { SupportBar } from "@/components/SupportBar";
 import { LiveChat } from "@/components/LiveChat";
 import { ChannelTabs } from "@/components/viewer/ChannelTabs";
 import { Avatar, formatNum } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
+import { video as videoProvider } from "@/lib/integrations";
 import { formatCast, formatFiat } from "@/lib/cast";
 
 export const revalidate = 60;
@@ -52,6 +54,10 @@ export default async function ChannelPage({ params }: Props) {
   const live = channel.streams[0];
   const c = channel.creator;
   const banner = `https://picsum.photos/seed/${encodeURIComponent(`${c.id}-banner-${c.brand}`)}/1600/600`;
+  // Live playback (mock test stream in demo; real Mux when configured) + a poster so the player
+  // always shows a frame instead of a black box.
+  const livePlayback = live ? await videoProvider.getPlayback(live.id) : null;
+  const livePoster = live ? `https://picsum.photos/seed/${encodeURIComponent(`${live.id}-live`)}/1280/720` : "";
 
   const jsonLd = [
     person(channel.creator),
@@ -82,31 +88,27 @@ export default async function ChannelPage({ params }: Props) {
   );
 
   // --- tab slots --------------------------------------------------------
-  const liveSlot = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {live ? (
-        <>
-          <Link
-            href={`/c/${handle}`}
-            className="card"
-            style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, textDecoration: "none" }}
-          >
-            <span className="live-pill">live</span>
-            <span style={{ fontWeight: 700 }}>{live.title}</span>
-            <span className="tnum lower" style={{ color: "var(--ink-3)", fontSize: 13 }}>
-              {formatNum(live.viewers)} watching
-            </span>
-          </Link>
-          <div style={{ maxWidth: 420 }}>
-            <LiveChat streamId={live.id} />
-          </div>
-        </>
-      ) : (
-        <p className="lower" style={{ color: "var(--ink-3)" }}>
-          nothing live right now — catch the library below or join for upcoming sessions.
-        </p>
-      )}
+  const liveSlot = live ? (
+    // Player + chat side-by-side on desktop, stacked on mobile (.split-2).
+    <div className="split-2" style={{ ["--split-2-cols" as string]: "minmax(0,1fr) 340px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {livePlayback && <VideoPlayer hlsUrl={livePlayback.hlsUrl} poster={livePoster} live />}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span className="live-pill">live</span>
+          <span style={{ fontWeight: 700, fontSize: 16 }}>{live.title}</span>
+          <span className="tnum lower" style={{ color: "var(--ink-3)", fontSize: 13 }}>
+            {formatNum(live.viewers)} watching
+          </span>
+        </div>
+      </div>
+      <div style={{ height: 420 }}>
+        <LiveChat streamId={live.id} />
+      </div>
     </div>
+  ) : (
+    <p className="lower" style={{ color: "var(--ink-3)" }}>
+      nothing live right now — catch the library below or join for upcoming sessions.
+    </p>
   );
 
   const librarySlot = channel.videos.length ? (

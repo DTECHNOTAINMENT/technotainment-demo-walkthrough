@@ -17,7 +17,7 @@ type Item = { href: string; label: string; icon: string };
 const SIGNED_IN: Item[] = [
   { href: "/home", label: "home", icon: "home" },
   { href: "/live", label: "live", icon: "flame" },
-  { href: "/library", label: "library", icon: "film" },
+  { href: "/videos", label: "videos", icon: "play" },
   { href: "/wallet", label: "wallet", icon: "wallet" },
   { href: "/profile", label: "you", icon: "user" },
 ];
@@ -25,6 +25,7 @@ const SIGNED_IN: Item[] = [
 const SIGNED_OUT: Item[] = [
   { href: "/", label: "home", icon: "home" },
   { href: "/live", label: "live", icon: "flame" },
+  { href: "/videos", label: "videos", icon: "play" },
   { href: "/explore", label: "explore", icon: "grid" },
   { href: "/sign-in", label: "sign in", icon: "user" },
 ];
