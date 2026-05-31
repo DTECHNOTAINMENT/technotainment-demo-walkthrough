@@ -341,3 +341,75 @@ export function demoEarningsView() {
   ];
   return { summary, payouts, methods };
 }
+
+// ---- dashboard extras (revenue series, top content, split, schedule) -------
+// powers the studio dashboard sections that aren't a single query: the 12-month
+// revenue bars, the revenue-by-source split, the top-content list and the
+// scheduled-streams list. plain demo data; real db wins via the query layer.
+
+export const STUDIO_MONTHS = ["jun", "jul", "aug", "sep", "oct", "nov", "dec", "jan", "feb", "mar", "apr", "may"];
+export const STUDIO_EARN_SERIES = [184000, 196000, 172000, 205000, 221000, 248000, 263000, 251000, 274000, 289000, 302000, 324000];
+export const STUDIO_GROSS_MONTH = 324000;
+export const STUDIO_MEMBER_SERIES = [820, 905, 980, 1040, 1080, 1120, 1150, 1180, 1190, 1210, 1228, 1240];
+export const STUDIO_FOLLOW_SERIES = [180000, 188000, 195000, 201000, 207000, 212000, 216000, 219000, 221000, 223000, 225000, 226800];
+export const STUDIO_VIEW_SERIES = [320, 340, 360, 372, 380, 388, 392, 396, 398, 399, 400, 401];
+
+export function demoRevenueSplit() {
+  return [
+    { id: "memberships", label: "memberships", cast: 142000, color: "#8b5cf6" },
+    { id: "tips", label: "tips", cast: 86000, color: "#ec4899" },
+    { id: "drops", label: "drops & store", cast: 54000, color: "#06b6d4" },
+    { id: "ppv", label: "ppv rentals", cast: 28000, color: "#10b981" },
+    { id: "gifts", label: "gifted subs", cast: 14000, color: "#f97316" },
+  ];
+}
+
+export function demoTopContent() {
+  const ch = nyx();
+  const mk = (id: string, title: string, slug: string, views: number, cast: number, watch: string) => ({
+    id, channelId: ch.id, title, slug,
+    thumbUrl: `https://picsum.photos/seed/${slug}/640/360`,
+    views, castEarned: cast, watch,
+    status: "published" as const, visibility: "public" as const,
+  });
+  return [
+    mk("vid-top-1", "buchla patch · night session #13", "buchla-night-13", 184320, 48200, "62k min"),
+    mk("vid-top-2", "modular from scratch · part 4", "modular-scratch-4", 96400, 31600, "41k min"),
+    mk("vid-top-3", "ambient improv · 4am", "ambient-improv-4am", 72100, 22800, "33k min"),
+    mk("vid-top-4", "sound design lab · resonators", "sound-design-resonators", 58900, 18400, "27k min"),
+  ];
+}
+
+export function demoSchedule() {
+  return [
+    { id: "sc1", title: "eurorack q&a · live patching", when: "tomorrow · 8:00 pm", reminders: 1840, visibility: "public" as const },
+    { id: "sc2", title: "patch archive drop · vol 5", when: "fri · 6:00 pm", reminders: 920, visibility: "members" as const },
+    { id: "sc3", title: "members-only deep dive", when: "sun · 7:00 pm", reminders: 410, visibility: "members" as const },
+  ];
+}
+
+export interface DashboardExtras {
+  months: string[];
+  earnSeries: number[];
+  grossMonth: number;
+  memberSeries: number[];
+  followSeries: number[];
+  viewSeries: number[];
+  revenueSplit: { id: string; label: string; cast: number; color: string }[];
+  topContent: ReturnType<typeof demoTopContent>;
+  schedule: ReturnType<typeof demoSchedule>;
+}
+
+export function demoDashboardExtras(): DashboardExtras {
+  return {
+    months: STUDIO_MONTHS,
+    earnSeries: STUDIO_EARN_SERIES,
+    grossMonth: STUDIO_GROSS_MONTH,
+    memberSeries: STUDIO_MEMBER_SERIES,
+    followSeries: STUDIO_FOLLOW_SERIES,
+    viewSeries: STUDIO_VIEW_SERIES,
+    revenueSplit: demoRevenueSplit(),
+    topContent: demoTopContent(),
+    schedule: demoSchedule(),
+  };
+}

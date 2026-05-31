@@ -1,23 +1,28 @@
 /**
- * Creator Studio — dashboard (/studio). Server-rendered overview ported to match
- * prototype/v4/studio-dashboard.jsx: KPI StatCards (with icons + sparks), a payout
- * snapshot rail, a revenue-split SegBar derived from settled activity, and a recent
- * activity ledger (`.act-row`). Data via studioOverview(); money formatted at the edge
- * with formatCast/formatFiat. Charts/cards reuse the studio-ui primitives.
+ * Creator Studio — dashboard (/studio). Server-rendered overview ported to full
+ * fidelity with prototype/v4/studio-dashboard.jsx:
+ *   - StudioPageHead (greeting + go-live / upload actions)
+ *   - KPI row of 4 StatCards (this month gross+net, members+mrr, followers, watch time)
+ *   - LEFT column: "revenue · last 12 months" (big number + Bars) and "top content · 30 days"
+ *   - RIGHT rail: payout snapshot, "where it came from" (SegBar + legend),
+ *     "recent activity" (money-in ledger) and "scheduled" (upcoming streams)
+ * Data via studioOverview() + studioDashboardExtras(); money formatted at the edge.
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireCreatorChannel } from "@/lib/studio";
-import { studioOverview } from "@/lib/queries/studio";
+import { studioOverview, studioDashboardExtras } from "@/lib/queries/studio";
 import { formatCast, formatFiat } from "@/lib/cast";
 import { Icon } from "@/components/ui/Icon";
+import { formatNum } from "@/components/ui/primitives";
 import {
   StatCard,
   StudioCard,
   StudioPageHead,
   Pill,
+  Bars,
   SegBar,
-  type SegBarSegment,
+  type PillTone,
 } from "@/components/studio-ui";
 
 const ACT_STYLE: Record<string, { color: string; icon: string }> = {
@@ -37,12 +42,9 @@ const ACT_LABEL: Record<string, string> = {
   topup: "top-up",
 };
 
-const SPLIT_COLOR: Record<string, string> = {
-  membership: "#8b5cf6",
-  tip: "#ec4899",
-  ppv: "#f97316",
-  drop: "#06b6d4",
-  gift: "#10b981",
+const VIS_TONE: Record<string, PillTone> = {
+  public: "neutral",
+  members: "info",
 };
 
 function timeAgo(d: Date): string {
@@ -66,17 +68,12 @@ export default async function StudioDashboardPage() {
     redirect("/studio/onboarding");
   }
 
-  const { videoCount, memberCount, followerCount, recent, earnings } = await studioOverview(channelId, creatorId);
+  const [{ memberCount, followerCount, recent, earnings }, extras] = await Promise.all([
+    studioOverview(channelId, creatorId),
+    studioDashboardExtras(channelId),
+  ]);
 
-  // Revenue split derived from the recent settled activity (presentation only).
-  const byKind: Record<string, number> = {};
-  for (const tx of recent) {
-    if (tx.cast > 0) byKind[tx.kind] = (byKind[tx.kind] ?? 0) + tx.cast;
-  }
-  const splitTotal = Object.values(byKind).reduce((a, v) => a + v, 0);
-  const segments: SegBarSegment[] = Object.entries(byKind)
-    .sort((a, b) => b[1] - a[1])
-    .map(([id, cast]) => ({ id, label: ACT_LABEL[id] ?? id, cast, color: SPLIT_COLOR[id] ?? "#8b5cf6" }));
+  const splitTotal = extras.revenueSplit.reduce((a, r) => a + r.cast, 0) || extras.grossMonth;
 
   return (
     <div className="page-pad" style={{ maxWidth: 1500, margin: "0 auto" }}>
@@ -98,58 +95,112 @@ export default async function StudioDashboardPage() {
 
       {/* KPI row */}
       <div className="kpi-grid">
-        <StatCard label="followers" icon="users" value={formatCast(followerCount)} unit="total" />
-        <StatCard label="members" icon="heart" value={formatCast(memberCount)} unit="active" sparkColor="#ec4899" />
-        <StatCard label="videos" icon="film" value={formatCast(videoCount)} unit="in library" sparkColor="#06b6d4" />
         <StatCard
-          label="available CAST"
+          label="this month"
           icon="cast"
-          value={formatCast(earnings.availableCast)}
-          unit="to pay out"
-          fiat={`= ${formatFiat(earnings.availableCast)}`}
+          value={formatNum(extras.grossMonth)}
+          unit="CAST gross"
+          fiat={`net ${formatFiat(earnings.netCast)} after fee`}
+          spark={extras.earnSeries.slice(-8)}
+          sparkColor="#8b5cf6"
+        />
+        <StatCard
+          label="members"
+          icon="heart"
+          value={formatNum(memberCount)}
+          unit="active"
+          fiat={`${formatCast(earnings.netCast)} CAST mrr`}
+          spark={extras.memberSeries.slice(-8)}
+          sparkColor="#ec4899"
+        />
+        <StatCard
+          label="followers"
+          icon="users"
+          value={formatNum(followerCount)}
+          unit="total"
+          spark={extras.followSeries.slice(-8)}
+          sparkColor="#06b6d4"
+        />
+        <StatCard
+          label="watch time"
+          icon="clock"
+          value={`${formatNum(extras.viewSeries[extras.viewSeries.length - 1] ?? 0)}k`}
+          unit="min · 30d"
+          spark={extras.viewSeries.slice(-8)}
+          sparkColor="#10b981"
         />
       </div>
 
+      {/* Main split */}
       <div className="st-split" style={{ marginTop: 16 }}>
-        {/* LEFT — recent activity */}
+        {/* LEFT */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <StudioCard title="recent activity" sub="money in, newest first" action={<Pill tone="ok">live</Pill>} pad={false}>
-            {recent.length ? (
-              <div style={{ padding: "8px 8px 12px", maxHeight: 460, overflowY: "auto" }}>
-                {recent.map((tx) => {
-                  const st = ACT_STYLE[tx.kind] ?? { color: "#8b5cf6", icon: "cast" };
-                  const positive = tx.cast > 0;
-                  return (
-                    <div key={tx.id} className="act-row">
-                      <span className="act-ico" style={{ background: st.color }}>
-                        <Icon name={st.icon} size={16} stroke={2.2} />
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12.5, fontWeight: 700 }} className="lower">
-                          {ACT_LABEL[tx.kind] ?? tx.kind}
-                        </div>
-                        <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>
-                          {tx.method}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div className="tnum" style={{ fontSize: 13, fontWeight: 800, color: positive ? "#10b981" : "var(--ink-1)" }}>
-                          {positive ? "+" : "−"}
-                          {formatCast(Math.abs(tx.cast))}
-                        </div>
-                        <div style={{ fontSize: 10, color: "var(--ink-4)" }}>{timeAgo(tx.createdAt)}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div style={{ padding: "32px 18px", textAlign: "center" }}>
-                <p className="lower" style={{ fontSize: 13, color: "var(--ink-3)", margin: 0 }}>
-                  no activity yet — once fans tip, subscribe or buy, it shows up here.
-                </p>
-              </div>
-            )}
+          {/* Revenue chart */}
+          <StudioCard
+            title="revenue · last 12 months"
+            sub="CAST gross, before platform fee"
+            action={
+              <Link href="/studio/analytics" className="btn btn-glass lower" style={{ padding: "8px 12px", fontSize: 12, textDecoration: "none" }}>
+                full analytics <Icon name="arrowR" size={13} stroke={2.2} />
+              </Link>
+            }
+          >
+            <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
+              <span className="tnum brand-grad-text stat-num" style={{ fontSize: 40 }}>
+                {formatNum(extras.grossMonth)}
+              </span>
+              <span className="lower" style={{ color: "var(--ink-3)", fontSize: 13, fontWeight: 700 }}>
+                CAST this month
+              </span>
+            </div>
+            <Bars data={extras.earnSeries} labels={extras.months} h={190} fmt={(v) => formatNum(v) + " CAST"} />
+          </StudioCard>
+
+          {/* Top content */}
+          <StudioCard
+            title="top content · 30 days"
+            action={
+              <Link href="/studio/content" className="btn btn-glass lower" style={{ padding: "8px 12px", fontSize: 12, textDecoration: "none" }}>
+                library <Icon name="arrowR" size={13} stroke={2.2} />
+              </Link>
+            }
+            pad={false}
+          >
+            {extras.topContent.map((c, i) => (
+              <Link
+                key={c.id}
+                href={`/studio/content/${c.id}`}
+                className="st-row"
+                style={{
+                  gridTemplateColumns: "20px 92px 1fr auto",
+                  borderTop: i ? "1px solid var(--hairline)" : "none",
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                <span className="mono" style={{ color: "var(--ink-4)", fontSize: 13, fontWeight: 800 }}>
+                  {i + 1}
+                </span>
+                <div className="thumb" style={{ backgroundImage: `url(${c.thumbUrl})`, aspectRatio: "16/9", borderRadius: 8 }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {c.title}
+                  </div>
+                  <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>
+                    {formatNum(c.views)} views · {c.watch}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div className="tnum" style={{ fontSize: 14, fontWeight: 800 }}>
+                    {formatNum(c.castEarned)}
+                  </div>
+                  <div className="lower" style={{ fontSize: 10, color: "var(--ink-4)" }}>
+                    CAST earned
+                  </div>
+                </div>
+              </Link>
+            ))}
           </StudioCard>
         </div>
 
@@ -167,7 +218,7 @@ export default async function StudioDashboardPage() {
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 10 }}>
                 <span className="cast-glyph" style={{ width: 26, height: 26, fontSize: 13 }}>
-                  c
+                  C
                 </span>
                 <span className="tnum brand-grad-text stat-num" style={{ fontSize: 44 }}>
                   {formatCast(earnings.availableCast)}
@@ -183,22 +234,18 @@ export default async function StudioDashboardPage() {
               >
                 <Icon name="wallet" size={15} stroke={2.2} /> withdraw
               </Link>
-              <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 12, display: "flex", flexDirection: "column", gap: 4 }}>
-                <span>lifetime net · {formatCast(earnings.netCast)} CAST</span>
-                <span>paid out · {formatCast(earnings.paidCast)} CAST</span>
-              </div>
             </div>
           </div>
 
           {/* Revenue split */}
-          {segments.length > 0 && (
-            <StudioCard title="where it came from" sub="recent activity · by source">
-              <SegBar segments={segments} total={splitTotal} />
+          {extras.revenueSplit.length > 0 && (
+            <StudioCard title="where it came from" sub="this month · by source">
+              <SegBar segments={extras.revenueSplit} total={splitTotal} />
               <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
-                {segments.map((r) => (
+                {extras.revenueSplit.map((r) => (
                   <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span className="legdot" style={{ background: r.color }} />
-                    <span style={{ flex: 1, fontSize: 12.5, color: "var(--ink-2)" }} className="lower">
+                    <span className="lower" style={{ flex: 1, fontSize: 12.5, color: "var(--ink-2)" }}>
                       {r.label}
                     </span>
                     <span className="tnum" style={{ fontSize: 12.5, fontWeight: 700 }}>
@@ -210,6 +257,75 @@ export default async function StudioDashboardPage() {
                   </div>
                 ))}
               </div>
+            </StudioCard>
+          )}
+
+          {/* Recent activity */}
+          <StudioCard title="recent activity" sub="money in, newest first" action={<Pill tone="ok">live</Pill>} pad={false}>
+            {recent.length ? (
+              <div style={{ padding: "8px 8px 12px", maxHeight: 320, overflowY: "auto" }}>
+                {recent.map((tx) => {
+                  const st = ACT_STYLE[tx.kind] ?? { color: "#8b5cf6", icon: "cast" };
+                  return (
+                    <div key={tx.id} className="act-row">
+                      <span className="act-ico" style={{ background: st.color }}>
+                        <Icon name={st.icon} size={16} stroke={2.2} />
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="lower" style={{ fontSize: 12.5, fontWeight: 700 }}>
+                          {ACT_LABEL[tx.kind] ?? tx.kind}
+                        </div>
+                        <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>
+                          {tx.method}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div className="tnum" style={{ fontSize: 13, fontWeight: 800, color: "#10b981" }}>
+                          +{formatCast(Math.abs(tx.cast))}
+                        </div>
+                        <div style={{ fontSize: 10, color: "var(--ink-4)" }}>{timeAgo(tx.createdAt)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ padding: "32px 18px", textAlign: "center" }}>
+                <p className="lower" style={{ fontSize: 13, color: "var(--ink-3)", margin: 0 }}>
+                  no activity yet — once fans tip, subscribe or buy, it shows up here.
+                </p>
+              </div>
+            )}
+          </StudioCard>
+
+          {/* Scheduled */}
+          {extras.schedule.length > 0 && (
+            <StudioCard
+              title="scheduled"
+              action={
+                <Link href="/studio/content" className="btn btn-glass lower" style={{ padding: "7px 11px", fontSize: 12, textDecoration: "none" }}>
+                  edit
+                </Link>
+              }
+              pad={false}
+            >
+              {extras.schedule.map((sc, i) => (
+                <div
+                  key={sc.id}
+                  className="st-row"
+                  style={{ gridTemplateColumns: "1fr auto", borderTop: i ? "1px solid var(--hairline)" : "none" }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {sc.title}
+                    </div>
+                    <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>
+                      {sc.when} · {formatNum(sc.reminders)} reminders set
+                    </div>
+                  </div>
+                  <Pill tone={VIS_TONE[sc.visibility] ?? "warn"}>{sc.visibility}</Pill>
+                </div>
+              ))}
             </StudioCard>
           )}
         </div>

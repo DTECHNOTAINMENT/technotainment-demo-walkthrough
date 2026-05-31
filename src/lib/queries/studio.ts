@@ -22,6 +22,8 @@ import {
   demoMembers,
   demoAnalytics,
   demoEarningsView,
+  demoDashboardExtras,
+  type DashboardExtras,
 } from "@/lib/fixtures-studio";
 
 // ---- return-type aliases (Prisma row shapes the pages consume) ------------
@@ -184,5 +186,56 @@ export async function earningsView(creatorId: string): Promise<EarningsViewResul
     return { summary, payouts, methods };
   } catch {
     return demoEarningsView() as unknown as EarningsViewResult;
+  }
+}
+
+/**
+ * Dashboard extras: the 12-month revenue series, revenue-by-source split, top content,
+ * and scheduled streams that the dashboard renders alongside studioOverview. Derived from
+ * the DB when present (revenue split from settled transactions; top content from videos;
+ * schedule from ScheduledStream), else the demo dataset. Never throws.
+ */
+export async function studioDashboardExtras(channelId: string): Promise<DashboardExtras> {
+  try {
+    const [txns, topVideos, scheduled] = await Promise.all([
+      prisma.transaction.findMany({
+        where: { channelId, status: "settled" },
+        select: { cast: true, kind: true, createdAt: true },
+      }),
+      prisma.video.findMany({
+        where: { channelId, status: "published" },
+        orderBy: { castEarned: "desc" },
+        take: 4,
+        select: { id: true, channelId: true, title: true, slug: true, thumbUrl: true, views: true, castEarned: true },
+      }),
+      prisma.scheduledStream.findMany({ where: { channelId }, orderBy: { createdAt: "asc" }, take: 4 }).catch(() => []),
+    ]);
+
+    if (txns.length === 0 && topVideos.length === 0) return demoDashboardExtras();
+
+    const demo = demoDashboardExtras();
+    // revenue split by kind from settled transactions
+    const SPLIT: { id: string; label: string; color: string }[] = [
+      { id: "membership", label: "memberships", color: "#8b5cf6" },
+      { id: "tip", label: "tips", color: "#ec4899" },
+      { id: "drop", label: "drops & store", color: "#06b6d4" },
+      { id: "ppv", label: "ppv rentals", color: "#10b981" },
+      { id: "gift", label: "gifted subs", color: "#f97316" },
+    ];
+    const byKind: Record<string, number> = {};
+    for (const t of txns) byKind[t.kind] = (byKind[t.kind] ?? 0) + Math.abs(t.cast);
+    const revenueSplit = SPLIT.map((s) => ({ ...s, cast: byKind[s.id] ?? 0 })).filter((s) => s.cast > 0);
+    const grossMonth = revenueSplit.reduce((s, r) => s + r.cast, 0) || demo.grossMonth;
+
+    return {
+      ...demo,
+      grossMonth,
+      revenueSplit: revenueSplit.length ? revenueSplit : demo.revenueSplit,
+      topContent: topVideos.length
+        ? topVideos.map((v) => ({ ...v, watch: `${Math.round(v.views / 1000)}k min`, status: "published" as const, visibility: "public" as const }))
+        : demo.topContent,
+    };
+  } catch {
+    return demoDashboardExtras();
   }
 }
