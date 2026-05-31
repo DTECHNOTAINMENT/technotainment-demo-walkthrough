@@ -1,6 +1,10 @@
 // (plain demo data — safe to import from server or test contexts; no "server-only")
 import { fxChannelByHandle } from "@/lib/fixtures";
+import { catImage } from "@/lib/img";
 import type { EarningsSummary } from "@/lib/earnings";
+
+/** The demo Studio belongs to Nyx (modular synth) — curated category for studio thumbnails. */
+const STUDIO_CAT = "modular synth";
 
 // ---------------------------------------------------------------------------
 // demo studio data — the no-database fallback for the whole creator studio.
@@ -145,7 +149,7 @@ function vid(o: {
     slug: o.slug,
     description: "",
     metaDescription: null as string | null,
-    thumbUrl: `https://picsum.photos/seed/${o.slug}/640/360`,
+    thumbUrl: catImage(STUDIO_CAT, o.slug),
     ogImageUrl: null as string | null,
     kind: "vod" as const,
     status: o.status,
@@ -368,7 +372,7 @@ export function demoTopContent() {
   const ch = nyx();
   const mk = (id: string, title: string, slug: string, views: number, cast: number, watch: string) => ({
     id, channelId: ch.id, title, slug,
-    thumbUrl: `https://picsum.photos/seed/${slug}/640/360`,
+    thumbUrl: catImage(STUDIO_CAT, slug),
     views, castEarned: cast, watch,
     status: "published" as const, visibility: "public" as const,
   });

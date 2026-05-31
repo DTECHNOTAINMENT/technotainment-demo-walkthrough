@@ -6,8 +6,37 @@
 import { mockId } from "../_shared/mockId";
 import type { LiveStream, Playback, VideoProvider } from "./types";
 
-/** Public test stream from docs/INTEGRATIONS.md §2 — plays offline in dev. */
-const PUBLIC_TEST_HLS = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+/**
+ * Real, freely-hosted sample films (Google's public gtv-videos bucket). These actually PLAY
+ * in the demo with no Mux account — MP4 plays natively in every browser. getPlayback() keys a
+ * deterministic film off the assetId so each video/stream shows a different real clip (not all
+ * the same), and the same id always resolves to the same film (stable across renders).
+ */
+const SAMPLE_MP4S = [
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4",
+];
+
+/** Stable index into SAMPLE_MP4S from an assetId (FNV-1a), so playback is deterministic. */
+function sampleFor(assetId: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < assetId.length; i++) {
+    h ^= assetId.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return SAMPLE_MP4S[(h >>> 0) % SAMPLE_MP4S.length];
+}
 
 export const mockVideo: VideoProvider = {
   async createUpload({ channelId }) {
@@ -17,12 +46,12 @@ export const mockVideo: VideoProvider = {
     };
   },
 
-  async getPlayback(_assetId): Promise<Playback> {
-    // Real adapters resolve per-asset; the mock returns the fixed public test
-    // stream so previews always render regardless of assetId.
+  async getPlayback(assetId): Promise<Playback> {
+    // Real adapters resolve per-asset; the mock returns a real sample film (deterministic per
+    // assetId) so previews actually play, and the player paints the page-supplied poster behind it.
     return {
-      hlsUrl: PUBLIC_TEST_HLS,
-      poster: "/samples/poster.jpg",
+      hlsUrl: sampleFor(assetId ?? ""),
+      poster: "",
       status: "ready",
     };
   },

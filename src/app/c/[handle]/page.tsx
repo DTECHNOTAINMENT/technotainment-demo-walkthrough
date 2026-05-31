@@ -19,6 +19,7 @@ import { ChannelSubscribeButton } from "@/components/viewer/ChannelSubscribeButt
 import { Avatar, Thumb, LiveBadge, ViewerBadge, formatNum } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
 import { formatCast } from "@/lib/cast";
+import { catImage } from "@/lib/img";
 import { PublicShell } from "@/components/app/PublicShell";
 
 export const revalidate = 60;
@@ -54,9 +55,9 @@ export default async function ChannelPage({ params }: Props) {
   const handle = channel.handle;
   const live = channel.streams[0];
   const c = channel.creator;
-  const banner = `https://picsum.photos/seed/${encodeURIComponent(`${c.id}-banner-${c.brand}`)}/1600/600`;
+  const banner = catImage(c.category, `${c.id}-banner`, 1600, 600);
   // Poster for the live tile thumbnail (the rich player itself lives on /watch/live/:id).
-  const livePoster = live ? `https://picsum.photos/seed/${encodeURIComponent(`${live.id}-live`)}/640/360` : "";
+  const livePoster = live ? catImage(c.category, `${live.id}-live`) : "";
 
   const jsonLd = [
     person(channel.creator),
@@ -145,7 +146,7 @@ export default async function ChannelPage({ params }: Props) {
         )}
         {schedule.map((s, i) => (
           <div key={s.title} className="tile" style={{ width: 320 }}>
-            <Thumb src={`https://picsum.photos/seed/${encodeURIComponent(`${c.id}-up${i + 1}`)}/640/360`}>
+            <Thumb src={catImage(c.category, `${c.id}-up${i + 1}`)}>
               <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, alignItems: "center" }}>
                 <span className="tnum" style={{ background: "rgba(0,0,0,0.65)", color: "white", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, backdropFilter: "blur(6px)", display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <Icon name="clock" size={11} stroke={2.4} /> in {s.when}
