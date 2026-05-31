@@ -974,3 +974,10 @@ h1, h2, h3, p { text-wrap: pretty; }
   padding: 16px; color: var(--ink-3); font-size: 12.5px; line-height: 1.6;
   background: var(--surface-2);
 }
+
+/* Bottom-nav stacking + cookie-banner clearance (mobile). The nav must sit above the cookie
+   banner and the banner must not cover it. */
+.bn { z-index: 70; }
+@media (max-width: 1023px) {
+  .cookie-banner { bottom: calc(72px + env(safe-area-inset-bottom)); }
+}

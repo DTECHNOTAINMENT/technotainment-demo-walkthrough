@@ -31,6 +31,7 @@ export function CookieConsent() {
     <div
       role="dialog"
       aria-label="cookie consent"
+      className="cookie-banner"
       style={{
         position: "fixed",
         left: 16,
