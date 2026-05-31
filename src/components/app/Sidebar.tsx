@@ -17,6 +17,7 @@ export interface SidebarCreator extends CreatorLike {
 const PRIMARY = [
   { href: "/home", label: "home", icon: "home" },
   { href: "/live", label: "live now", icon: "flame" },
+  { href: "/videos", label: "videos", icon: "play" },
   { href: "/library", label: "library", icon: "film" },
 ];
 
@@ -33,7 +34,7 @@ const CATEGORIES = [
 
 const YOU = [
   { href: "/following", label: "following", icon: "heart" },
-  { href: "/explore/all", label: "explore", icon: "grid" },
+  { href: "/explore", label: "explore", icon: "grid" },
   { href: "/explore/drops", label: "drops", icon: "bag" },
   { href: "/wallet", label: "wallet", icon: "wallet" },
   { href: "/profile", label: "profile", icon: "user" },
