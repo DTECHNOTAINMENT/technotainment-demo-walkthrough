@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ThemeScript } from "@/components/theme";
 import { CookieConsent } from "@/components/CookieConsent";
+import { MobileNav } from "@/components/app/MobileNav";
 import { getBranding } from "@/lib/settings";
 import "./globals.css";
 
@@ -31,6 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         {children}
+        <MobileNav />
         <CookieConsent />
       </body>
     </html>
