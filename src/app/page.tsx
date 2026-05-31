@@ -3,17 +3,8 @@ import { balanceOf } from "@/lib/money";
 import { listLiveStreams, listRecentVideos } from "@/lib/queries/public";
 import { Sidebar } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
-import { BottomNav } from "@/components/app/BottomNav";
-import type { NavItem } from "@/components/app/NavLinks";
 import { HomeView } from "@/components/home/HomeView";
 import { buildHome } from "@/components/home/build";
-
-const PUBLIC_NAV: NavItem[] = [
-  { href: "/", label: "home", icon: "home" },
-  { href: "/live", label: "live", icon: "flame" },
-  { href: "/explore", label: "explore", icon: "grid" },
-  { href: "/sign-in", label: "sign in", icon: "user" },
-];
 
 // Public front door — the rich streaming home for anonymous visitors. Same shell + grid as
 // the authed /home, with a sign-in CTA in place of the avatar/balance. Authed users go to /home.
@@ -40,7 +31,6 @@ export default async function PublicHome() {
           <HomeView hero={hero} tiles={tiles} />
         </main>
       </div>
-      <BottomNav items={PUBLIC_NAV} />
     </div>
   );
 }

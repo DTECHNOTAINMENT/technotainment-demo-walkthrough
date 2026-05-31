@@ -6,6 +6,7 @@ import { consentFor } from "@/lib/queries/viewer";
 import { balanceOf } from "@/lib/money";
 import { formatCast } from "@/lib/cast";
 import { ConsentToggles, type ConsentRow } from "@/components/app/ConsentToggles";
+import { SignOutButton } from "@/components/app/SignOutButton";
 import { Icon } from "@/components/ui/Icon";
 
 export const metadata: Metadata = { title: "profile", robots: { index: false } };
@@ -63,6 +64,7 @@ export default async function ProfilePage() {
           <Link href="/settings" className="btn btn-grad-stroke lower" style={{ padding: "10px 16px", fontSize: 13 }}>
             <Icon name="settings" size={14} stroke={2.2} /> settings
           </Link>
+          <SignOutButton />
         </div>
       </div>
 
