@@ -1,33 +1,38 @@
 // Watch page — /watch/:slug. ISR (revalidate 60).
-// Presentation rebuilt to match prototype/v4/live.jsx (ambient-glow player, title, creator
-// row with subscribe/tip/share/save, description box, chapters). Data wiring (VideoPlayer,
-// videoProvider.getPlayback, JsonLd, generateMetadata, SupportBar) is unchanged.
-import Link from "next/link";
+// Presentation rebuilt to match prototype/v4/live.jsx (LiveWatchScreen non-fullscreen layout):
+// a 2-column youtube-style watch view — ambient-glow player + title + creator/actions row +
+// expandable description + tabs (chat/about/drops/competition/members) on the left, and a
+// live-drop card + filter chips + vertical up-next list on the right. Data wiring (VideoPlayer,
+// videoProvider.getPlayback, JsonLd, generateMetadata, getVideoBySlug) is unchanged; the
+// heavy interactive parts are "use client" components under src/components/watch.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getVideoBySlug } from "@/lib/queries/public";
+import { getVideoBySlug, getChannelByHandle, listLiveStreams, listRecentVideos } from "@/lib/queries/public";
 import { buildMetadata, clampDescription, ogImage } from "@/lib/seo/meta";
 import { videoObject, breadcrumb } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { VideoPlayer } from "@/components/VideoPlayer";
-import { SupportBar } from "@/components/SupportBar";
-import { Avatar } from "@/components/ui/primitives";
-import { Icon } from "@/components/ui/Icon";
+import { formatNum } from "@/components/ui/primitives";
 import { video as videoProvider } from "@/lib/integrations";
-import { formatCast } from "@/lib/cast";
 import { PublicShell } from "@/components/app/PublicShell";
+import { WatchActions } from "@/components/watch/WatchActions";
+import { WatchDescription } from "@/components/watch/WatchDescription";
+import { WatchTabs } from "@/components/watch/WatchTabs";
+import { WatchUpNext } from "@/components/watch/WatchUpNext";
+import { buildUpNext, buildDrops, buildCompetitions, buildTiers, buildDropCard } from "@/components/watch/data";
 
 export const revalidate = 60;
 
 type Props = { params: { slug: string } };
 
-function hhmmss(sec: number): string {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
-  const mm = String(m).padStart(h ? 2 : 1, "0");
-  const ss = String(s).padStart(2, "0");
-  return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+function ago(date: Date | null): string {
+  if (!date) return "recently";
+  const days = Math.max(0, Math.round((Date.now() - new Date(date).getTime()) / 86_400_000));
+  if (days <= 0) return "today";
+  if (days === 1) return "1 day ago";
+  if (days < 7) return `${days} days ago`;
+  const weeks = Math.round(days / 7);
+  return weeks <= 1 ? "1 week ago" : `${weeks} weeks ago`;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -52,6 +57,12 @@ export default async function WatchPage({ params }: Props) {
   const creator = video.channel.creator;
   const locked = video.visibility === "members" || video.visibility === "ppv";
 
+  const [channel, liveStreams, recent] = await Promise.all([
+    getChannelByHandle(creator.handle).catch(() => null),
+    listLiveStreams().catch(() => []),
+    listRecentVideos(18).catch(() => []),
+  ]);
+
   const jsonLd = [
     videoObject({
       title: video.title,
@@ -73,123 +84,118 @@ export default async function WatchPage({ params }: Props) {
 
   const playback = locked ? null : await videoProvider.getPlayback(video.id);
 
+  const products = channel?.products ?? [];
+  const tiers = channel?.tiers ?? [];
+  const drop = buildDropCard(products, video.thumbUrl);
+  const upNext = buildUpNext(liveStreams, recent, video.slug, ago);
+
+  const followers = creator.followers ?? 0;
+  const metaLine = `${formatNum(video.views)} views · ${ago(video.publishedAt)}`;
+  const subsLine = `${formatNum(followers)} subscribers · ${formatNum(Math.max(1, Math.round(followers * 0.0012)))} joined this week`;
+
   return (
     <PublicShell>
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px 96px" }}>
-      <JsonLd data={jsonLd} />
-
-      {/* PLAYER with ambient glow */}
-      <div style={{ position: "relative" }}>
+      <div style={{ background: "var(--bg)", color: "var(--ink-1)", minHeight: "100vh", paddingBottom: 96 }}>
         <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: "-60px -60px -90px -60px",
-            background: "radial-gradient(60% 60% at 50% 50%, rgba(139,92,246,0.10), transparent 70%)",
-            filter: "blur(90px)",
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        />
-        <div style={{ position: "relative", zIndex: 1, borderRadius: 18, overflow: "hidden", boxShadow: "0 40px 80px -32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03)" }}>
-          {playback ? (
-            <VideoPlayer hlsUrl={playback.hlsUrl} poster={video.thumbUrl} live={false} />
-          ) : (
-            <div
-              style={{
-                position: "relative",
-                aspectRatio: "16 / 9",
-                backgroundImage: `url(${video.thumbUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            >
-              <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: "rgba(0,0,0,0.6)", color: "#fff", textAlign: "center", padding: 24 }}>
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 800 }} className="lower">
-                    {video.visibility === "ppv" ? "pay-per-view" : "members only"}
+          className="yt-layout"
+          style={{ maxWidth: 1700, margin: "0 auto", padding: "28px 32px 0", display: "grid", gap: 40, gridTemplateColumns: "1fr" }}
+        >
+          <style>{`
+            @media (min-width: 1024px) { .yt-layout { grid-template-columns: minmax(0, 1fr) 380px !important; gap: 48px !important; } }
+            @media (min-width: 1280px) { .yt-layout { grid-template-columns: minmax(0, 1.95fr) 400px !important; padding-right: 6%; } }
+            @media (min-width: 1600px) { .yt-layout { padding-right: 9%; } }
+          `}</style>
+
+          <JsonLd data={jsonLd} />
+
+          {/* LEFT COLUMN */}
+          <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 0 }}>
+            {/* ambient glow behind player */}
+            <div style={{ position: "relative" }}>
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  inset: "-60px -60px -90px -60px",
+                  background: "radial-gradient(60% 60% at 50% 50%, rgba(139,92,246,0.10), transparent 70%)",
+                  filter: "blur(90px)",
+                  pointerEvents: "none",
+                  zIndex: 0,
+                }}
+              />
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  boxShadow: "0 40px 80px -32px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.03)",
+                }}
+              >
+                {playback ? (
+                  <VideoPlayer hlsUrl={playback.hlsUrl} poster={video.thumbUrl} live={false} />
+                ) : (
+                  <div
+                    style={{
+                      position: "relative",
+                      aspectRatio: "16 / 9",
+                      backgroundImage: `url(${video.thumbUrl})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  >
+                    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: "rgba(0,0,0,0.6)", color: "#fff", textAlign: "center", padding: 24 }}>
+                      <div>
+                        <div style={{ fontSize: 18, fontWeight: 800 }} className="lower">
+                          {video.visibility === "ppv" ? "pay-per-view" : "members only"}
+                        </div>
+                        <p className="lower" style={{ color: "rgba(255,255,255,0.8)", marginTop: 8, maxWidth: 360 }}>
+                          {video.visibility === "ppv" ? "unlock this video with CAST to watch." : "join the membership to watch this video."}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="lower" style={{ color: "rgba(255,255,255,0.8)", marginTop: 8, maxWidth: 360 }}>
-                    {video.visibility === "ppv" ? "unlock this video with CAST to watch." : "join the membership to watch this video."}
-                  </p>
-                </div>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* TITLE */}
-      <h1 style={{ margin: "28px 0 0", fontSize: 22, fontWeight: 600, lineHeight: 1.3, color: "var(--ink-1)", letterSpacing: "-0.01em" }}>{video.title}</h1>
+            {/* TITLE */}
+            <h1 style={{ margin: "28px 0 0", fontSize: 22, fontWeight: 600, lineHeight: 1.3, color: "var(--ink-1)", letterSpacing: "-0.01em" }}>
+              {video.title}
+            </h1>
 
-      {/* CREATOR + ACTIONS ROW */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginTop: 16 }}>
-        <Link href={`/c/${creator.handle}`} style={{ display: "flex", gap: 12, alignItems: "center", textDecoration: "none" }}>
-          <Avatar creator={creator} size={40} />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink-1)" }}>{creator.name}</div>
-            <div className="tnum lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>
-              {creator.handle} · {formatCast(video.views)} views
-            </div>
+            {/* CREATOR + ACTIONS */}
+            <WatchActions creator={creator} channelId={video.channel.id} subsLine={subsLine} />
+
+            {/* DESCRIPTION */}
+            {video.description && (
+              <WatchDescription metaLine={metaLine} description={video.description} />
+            )}
+
+            {/* TABS */}
+            <WatchTabs
+              live={false}
+              about={{
+                category: creator.category || "—",
+                tags: creator.bio ? creator.bio.split(/[.,]/)[0].trim() : "—",
+                schedule: "new uploads weekly",
+                language: "english",
+              }}
+              drops={buildDrops(products, video.thumbUrl)}
+              competitions={buildCompetitions()}
+              tiers={buildTiers(tiers)}
+              giftedSubs={142}
+            />
           </div>
-        </Link>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <Pillbtn icon="share" label="share" />
-          <Pillbtn icon="bookmark" label="save" />
+
+          {/* RIGHT COLUMN */}
+          <WatchUpNext
+            drop={drop}
+            chips={["all", `from ${creator.handle.replace(/^@/, "")}`, creator.category || "more", "live now"]}
+            items={upNext}
+          />
         </div>
       </div>
-
-      {/* SUPPORT */}
-      <div style={{ marginTop: 20 }}>
-        <SupportBar channelId={video.channel.id} tiers={[]} compact />
-      </div>
-
-      {/* DESCRIPTION */}
-      {video.description && (
-        <div style={{ marginTop: 20, background: "var(--surface-2)", borderRadius: 12, padding: "14px 16px" }}>
-          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "var(--ink-2)", whiteSpace: "pre-wrap" }}>{video.description}</p>
-        </div>
-      )}
-
-      {/* CHAPTERS */}
-      {video.chapters.length > 0 && (
-        <section style={{ marginTop: 28 }}>
-          <h2 className="lower" style={{ fontSize: 18, marginBottom: 12 }}>chapters</h2>
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 4 }}>
-            {video.chapters.map((ch) => (
-              <li key={ch.atSec}>
-                <a href={`#t=${ch.atSec}`} style={{ display: "flex", gap: 12, alignItems: "baseline", padding: "6px 0", color: "var(--ink-2)", textDecoration: "none" }}>
-                  <span className="tnum" style={{ color: "var(--ink-3)", minWidth: 56 }}>{hhmmss(ch.atSec)}</span>
-                  <span>{ch.label}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </main>
     </PublicShell>
-  );
-}
-
-function Pillbtn({ icon, label }: { icon: string; label: string }) {
-  return (
-    <span
-      className="lower"
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "0 16px",
-        height: 36,
-        borderRadius: 999,
-        background: "var(--surface-2)",
-        color: "var(--ink-1)",
-        fontWeight: 500,
-        fontSize: 14,
-      }}
-    >
-      <Icon name={icon} size={15} stroke={2.2} /> {label}
-    </span>
   );
 }
