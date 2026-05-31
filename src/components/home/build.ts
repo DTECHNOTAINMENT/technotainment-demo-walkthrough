@@ -42,7 +42,7 @@ export function streamTile(s: StreamRow): HomeTile {
   return {
     id: s.id,
     title: s.title,
-    href: `/c/${s.channel.handle.replace(/^@/, "")}`,
+    href: `/watch/live/${s.id}`,
     thumb: picThumb(s.id),
     creator: { name: c.name, handle: c.handle, brand: c.brand, brand2: c.brand2 },
     live: true,
@@ -70,7 +70,7 @@ export function heroFromStream(s: StreamRow): HeroData {
     title: s.title,
     sub: `${s.category} · live now`,
     kicker: [s.category],
-    href: `/c/${s.channel.handle.replace(/^@/, "")}`,
+    href: `/watch/live/${s.id}`,
     img: picThumb(`${s.id}-hero`),
     viewers: s.viewers,
     creator: { name: c.name, handle: c.handle, brand: c.brand, brand2: c.brand2 },

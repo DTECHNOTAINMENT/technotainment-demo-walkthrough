@@ -114,6 +114,26 @@ function listLiveStreamsDb() {
   });
 }
 
+/** A single live stream by id (the live-watch page). No-DB safe (fixtures fallback). */
+export async function getStreamById(id: string) {
+  type DbRow = Awaited<ReturnType<typeof getStreamByIdDb>>;
+  try {
+    const row = await getStreamByIdDb(id);
+    if (row) return row;
+  } catch {
+    /* fall through to fixtures */
+  }
+  const fx = fxLiveStreams().find((s) => s.id === id) ?? fxLiveStreams()[0] ?? null;
+  return (fx as unknown as DbRow) ?? null;
+}
+
+function getStreamByIdDb(id: string) {
+  return prisma.stream.findUnique({
+    where: { id },
+    include: { channel: { include: { creator: true } } },
+  });
+}
+
 /** Recent published public VODs across all channels — powers the home grid + anon front door. */
 export async function listRecentVideos(take = 18) {
   try {

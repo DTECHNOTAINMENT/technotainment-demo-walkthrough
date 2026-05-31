@@ -44,7 +44,7 @@ export default async function LivePage() {
           {streams.map((s) => {
             const creator = s.channel.creator;
             return (
-              <Link key={s.id} href={`/c/${s.channel.handle}`} className="gtile tile" style={{ display: "block", textDecoration: "none" }}>
+              <Link key={s.id} href={`/watch/live/${s.id}`} className="gtile tile" style={{ display: "block", textDecoration: "none" }}>
                 <div
                   className="thumb"
                   style={{

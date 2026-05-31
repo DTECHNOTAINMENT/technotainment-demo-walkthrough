@@ -70,7 +70,7 @@ export function buildUpNext(
     id: `live-${s.id}`,
     title: s.title,
     handle: s.channel.creator.handle,
-    href: `/c/${s.channel.handle}`,
+    href: `/watch/live/${s.id}`,
     thumbUrl: pic(s.id),
     overlay: s.category.toUpperCase(),
     overlayBg: s.channel.creator.brand,
