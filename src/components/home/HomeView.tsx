@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Avatar, LiveBadge, ViewerBadge, Thumb, formatNum, type CreatorLike } from "@/components/ui/primitives";
+import { AnimatedViewerCount } from "@/components/home/AnimatedViewerCount";
+import { DropsRail } from "@/components/home/DropsRail";
 
 export interface HomeTile {
   id: string;
@@ -158,12 +160,7 @@ function Hero({ hero }: { hero: HeroData }) {
             </div>
           </div>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span
-              className="tnum"
-              style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 800, letterSpacing: "-0.02em", color: "white" }}
-            >
-              {formatNum(hero.viewers)}
-            </span>
+            <AnimatedViewerCount base={hero.viewers} />
             <span style={{ fontSize: 12, opacity: 0.75, fontStyle: "italic" }}>watching now</span>
           </div>
         </div>
@@ -192,6 +189,8 @@ export function HomeView({ hero, tiles }: { hero: HeroData | null; tiles: HomeTi
           </div>
         )}
       </section>
+
+      <DropsRail />
     </div>
   );
 }

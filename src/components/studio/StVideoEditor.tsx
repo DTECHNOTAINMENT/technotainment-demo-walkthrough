@@ -9,9 +9,16 @@
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatFiat } from "@/lib/cast";
+import { formatCast, formatFiat } from "@/lib/cast";
+import { Icon } from "@/components/ui/Icon";
+import { AreaSpark, Dropzone } from "@/components/studio-ui";
 
 type Visibility = "public" | "members" | "ppv";
+
+interface Chapter {
+  atSec: number;
+  label: string;
+}
 
 export interface StVideoEditorProps {
   id: string;
@@ -24,8 +31,27 @@ export interface StVideoEditorProps {
     ppvPriceCast: number;
     captions: boolean;
     status: string;
+    thumbUrl: string;
+    views: number;
+    castEarned: number;
+    chapters: Chapter[];
+    thumbOptions: string[];
   };
   origin: string;
+}
+
+function mmss(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return h > 0
+    ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+    : `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function parseMmss(input: string): number {
+  const parts = input.split(":").map((p) => parseInt(p, 10) || 0);
+  return parts.reduce((acc, p) => acc * 60 + p, 0);
 }
 
 function slugify(input: string): string {
@@ -69,6 +95,10 @@ export function StVideoEditor({ id, initial, origin }: StVideoEditorProps) {
   const [ppvPriceCast, setPpvPriceCast] = useState<number>(initial.ppvPriceCast || 60);
   const [captions, setCaptions] = useState(initial.captions);
   const [status, setStatus] = useState(initial.status);
+  const [comments, setComments] = useState(true);
+  const [downloads, setDownloads] = useState(initial.visibility === "members");
+  const [thumbIdx, setThumbIdx] = useState(0);
+  const [chapters, setChapters] = useState<Chapter[]>(initial.chapters);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +106,52 @@ export function StVideoEditor({ id, initial, origin }: StVideoEditorProps) {
   const metaOver = metaDescription.length > 160;
   const published = status === "published";
   const watchUrl = `${origin}/watch/${slug}`;
+
+  function addChapter() {
+    const last = chapters.length ? chapters[chapters.length - 1].atSec + 60 : 0;
+    setChapters((c) => [...c, { atSec: last, label: "new chapter" }]);
+  }
+  function updateChapter(i: number, patch: Partial<Chapter>) {
+    setChapters((c) => c.map((ch, idx) => (idx === i ? { ...ch, ...patch } : ch)));
+  }
+  function removeChapter(i: number) {
+    setChapters((c) => c.filter((_, idx) => idx !== i));
+  }
+
+  async function unpublish() {
+    if (busy) return;
+    setBusy(true);
+    setMsg(null);
+    setError(null);
+    try {
+      const res = await fetch(`/api/studio/videos/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ publish: false }),
+      });
+      const data = (await res.json()) as { ok?: boolean; status?: string; error?: string };
+      if (!res.ok || !data.ok) {
+        // API may not support unpublish — fall back to a visual state change.
+        setStatus("draft");
+        setMsg("unpublished · saved as draft (demo)");
+        return;
+      }
+      setStatus(data.status ?? "draft");
+      setMsg("unpublished · saved as draft");
+      router.refresh();
+    } catch {
+      setStatus("draft");
+      setMsg("unpublished · saved as draft (demo)");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function deleteVideo() {
+    if (typeof window !== "undefined" && !window.confirm("delete this video permanently?")) return;
+    setMsg("video deleted (demo) · no delete api yet — returning to content");
+    router.push("/studio/content");
+  }
 
   async function save(publish: boolean) {
     if (busy) return;
@@ -141,6 +217,108 @@ export function StVideoEditor({ id, initial, origin }: StVideoEditorProps) {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="patch notes, timestamps, gear used…"
               />
+            </div>
+            <div>
+              <label style={labelStyle} className="lower">
+                thumbnail
+              </label>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {initial.thumbOptions.map((t, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className="thumb"
+                    onClick={() => setThumbIdx(i)}
+                    style={{
+                      backgroundImage: `url(${t})`,
+                      width: 120,
+                      aspectRatio: "16/9",
+                      borderRadius: 8,
+                      outline: thumbIdx === i ? "2px solid #8b5cf6" : "none",
+                      border: "1px solid var(--hairline)",
+                    }}
+                    aria-label={`auto frame ${i + 1}`}
+                  />
+                ))}
+                <label
+                  className="thumb"
+                  style={{
+                    width: 120,
+                    aspectRatio: "16/9",
+                    borderRadius: 8,
+                    background: "var(--surface-2)",
+                    border: "1px dashed var(--hairline-2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--ink-3)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input type="file" accept="image/*" hidden onChange={() => setMsg("custom thumbnail attached (demo)")} />
+                  <Icon name="plus" size={20} stroke={2.2} />
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* chapters */}
+        <section className="card" style={{ background: "var(--surface)" }}>
+          <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--hairline)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div className="lower" style={{ fontWeight: 800, fontSize: 15 }}>
+                chapters
+              </div>
+              <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>timestamps shown on the player</div>
+            </div>
+            <button type="button" onClick={addChapter} className="btn btn-glass lower" style={{ padding: "7px 11px", fontSize: 12 }}>
+              <Icon name="plus" size={13} stroke={2.4} /> add
+            </button>
+          </div>
+          <div>
+            {chapters.length === 0 && (
+              <div className="lower" style={{ padding: 18, fontSize: 12.5, color: "var(--ink-3)" }}>
+                no chapters yet — add timestamps to help viewers jump around.
+              </div>
+            )}
+            {chapters.map((c, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "84px 1fr 40px",
+                  gap: 10,
+                  alignItems: "center",
+                  padding: "10px 18px",
+                  borderTop: i ? "1px solid var(--hairline)" : "none",
+                }}
+              >
+                <input
+                  className="mono"
+                  value={mmss(c.atSec)}
+                  onChange={(e) => updateChapter(i, { atSec: parseMmss(e.target.value) })}
+                  style={{ ...inputStyle, padding: "8px 10px", fontSize: 12.5, fontWeight: 700 }}
+                  aria-label="timestamp"
+                />
+                <input
+                  value={c.label}
+                  onChange={(e) => updateChapter(i, { label: e.target.value })}
+                  style={{ ...inputStyle, padding: "8px 10px", fontSize: 13 }}
+                  aria-label="chapter label"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeChapter(i)}
+                  style={{ color: "var(--ink-4)", display: "flex", justifyContent: "center" }}
+                  aria-label="remove chapter"
+                >
+                  <Icon name="close" size={14} />
+                </button>
+              </div>
+            ))}
+            <div className="lower" style={{ padding: "10px 18px", borderTop: "1px solid var(--hairline)", fontSize: 11, color: "var(--ink-4)" }}>
+              chapters are editable here but not yet persisted by the videos api — visual for now.
             </div>
           </div>
         </section>
@@ -277,8 +455,75 @@ export function StVideoEditor({ id, initial, origin }: StVideoEditorProps) {
                 visible to your paying members. everyone else sees a paywall preview.
               </div>
             )}
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 0", borderTop: "1px solid var(--hairline)" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>allow comments</div>
+                  <div style={{ fontSize: 11, color: "var(--ink-3)" }}>let viewers reply under this video</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setComments((c) => !c)}
+                  className={`tg ${comments ? "on" : ""}`}
+                  aria-pressed={comments}
+                  aria-label="toggle comments"
+                  style={{ flex: "0 0 auto" }}
+                />
+              </div>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 0", borderTop: "1px solid var(--hairline)" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>member downloads</div>
+                  <div style={{ fontSize: 11, color: "var(--ink-3)" }}>members can download the file</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDownloads((d) => !d)}
+                  className={`tg ${downloads ? "on" : ""}`}
+                  aria-pressed={downloads}
+                  aria-label="toggle member downloads"
+                  style={{ flex: "0 0 auto" }}
+                />
+              </div>
+            </div>
           </div>
         </section>
+
+        {/* performance (published only) */}
+        {published ? (
+          <section className="card" style={{ background: "var(--surface)" }}>
+            <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--hairline)" }}>
+              <div className="lower" style={{ fontWeight: 800, fontSize: 15 }}>
+                performance
+              </div>
+              <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>since published</div>
+            </div>
+            <div style={{ padding: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+                {[
+                  ["views", formatCast(initial.views)],
+                  ["CAST earned", formatCast(initial.castEarned)],
+                  ["avg. watched", "68%"],
+                  ["new members", "+42"],
+                ].map(([k, val]) => (
+                  <div key={k}>
+                    <div className="lower" style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-3)" }}>
+                      {k}
+                    </div>
+                    <div className="tnum stat-num" style={{ fontSize: 22, marginTop: 4 }}>
+                      {val}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="lower" style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-3)", marginBottom: 8 }}>
+                views · last 14 days
+              </div>
+              <AreaSpark data={[120, 180, 240, 210, 320, 410, 380, 460, 520, 480, 560, 610, 590, 680]} h={120} />
+            </div>
+          </section>
+        ) : (
+          <div className="st-hint">analytics appear once this video is published and starts getting views.</div>
+        )}
 
         <section className="card" style={{ background: "var(--surface)" }}>
           <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--hairline)" }}>
@@ -294,14 +539,28 @@ export function StVideoEditor({ id, initial, origin }: StVideoEditorProps) {
               {busy ? "saving…" : "save changes"}
             </button>
             {published ? (
-              <span className="lower" style={{ fontSize: 12, color: "#10b981", textAlign: "center" }}>
-                live on your channel
-              </span>
+              <button
+                type="button"
+                onClick={() => void unpublish()}
+                disabled={busy}
+                className="btn btn-glass lower"
+                style={{ padding: 11, justifyContent: "flex-start", color: "#f59e0b", borderColor: "rgba(245,158,11,0.3)", opacity: busy ? 0.5 : 1 }}
+              >
+                <Icon name="bookmark" size={15} stroke={2.2} /> unpublish
+              </button>
             ) : (
               <button type="button" onClick={() => void save(true)} disabled={busy || metaOver} className="btn btn-grad lower" style={{ padding: 11, opacity: busy || metaOver ? 0.5 : 1 }}>
                 {busy ? "publishing…" : "publish now"}
               </button>
             )}
+            <button
+              type="button"
+              onClick={deleteVideo}
+              className="btn btn-glass lower"
+              style={{ padding: 11, justifyContent: "flex-start", color: "var(--bg-red)", borderColor: "rgba(239,68,68,0.3)" }}
+            >
+              <Icon name="close" size={15} stroke={2.4} /> delete video
+            </button>
             {msg && (
               <span className="lower" style={{ fontSize: 12, color: "var(--ink-3)", textAlign: "center" }}>
                 {msg}

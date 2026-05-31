@@ -165,6 +165,39 @@ export default async function StudioEarningsPage() {
               </div>
             )}
           </SxCard>
+
+          <SxCard title="fee breakdown" sub="how your payout is calculated">
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                ["gross · lifetime", formatCast(summary.grossCast), "var(--ink-1)"],
+                [`technotainment fee · ${Math.round(economy.platformTakeRate * 100)}%`, "−" + formatCast(summary.grossCast - summary.netCast), "#ef4444"],
+                ["payment processing", "included", "var(--ink-3)"],
+                ["chargebacks / refunds", "0", "var(--ink-3)"],
+              ].map(([k, v, c]) => (
+                <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                  <span className="lower" style={{ color: "var(--ink-3)" }}>
+                    {k}
+                  </span>
+                  <span className="tnum" style={{ fontWeight: 700, color: c }}>
+                    {v}
+                  </span>
+                </div>
+              ))}
+              <div style={{ height: 1, background: "var(--hairline)" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span className="lower" style={{ fontWeight: 800 }}>
+                  net to you
+                </span>
+                <span className="brand-grad-text tnum" style={{ fontSize: 18, fontWeight: 800 }}>
+                  {formatCast(summary.netCast)} CAST
+                </span>
+              </div>
+              <div className="st-hint">
+                technotainment&apos;s flat {Math.round(economy.platformTakeRate * 100)}% covers hosting, payments and chargebacks.
+                payout-rail fees (instant, paypal, usdc…) are shown in the withdraw panel before you confirm.
+              </div>
+            </div>
+          </SxCard>
         </div>
       </div>
     </div>

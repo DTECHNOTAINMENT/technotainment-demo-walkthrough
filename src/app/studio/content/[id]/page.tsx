@@ -31,6 +31,11 @@ export default async function StudioVideoEditorPage({ params }: { params: { id: 
 
   const tone = STATUS_TONE[v.status] ?? STATUS_TONE.draft;
 
+  // three auto-frame thumbnail options (current + two derived seeds for the picker).
+  const baseThumb = v.thumbUrl ?? `https://picsum.photos/seed/${v.slug}/640/360`;
+  const thumbOptions = [baseThumb, `https://picsum.photos/seed/${v.slug}-2/640/360`, `https://picsum.photos/seed/${v.slug}-3/640/360`];
+  const chapters = (v.chapters ?? []).map((c) => ({ atSec: c.atSec, label: c.label }));
+
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 24px 80px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22, flexWrap: "wrap" }}>
@@ -75,6 +80,11 @@ export default async function StudioVideoEditorPage({ params }: { params: { id: 
           ppvPriceCast: v.ppvPriceCast ?? 0,
           captions: v.captions,
           status: v.status,
+          thumbUrl: baseThumb,
+          views: v.views,
+          castEarned: v.castEarned,
+          chapters,
+          thumbOptions,
         }}
       />
     </div>

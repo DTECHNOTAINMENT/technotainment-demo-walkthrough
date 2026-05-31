@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { ThemeToggle } from "@/components/theme";
 import { PageHeader } from "@/components/viewer/shared";
+import { SettingsControls } from "@/components/viewer/SettingsControls";
 
 export const metadata: Metadata = { title: "settings", robots: { index: false } };
 
@@ -67,6 +68,8 @@ export default async function SettingsPage() {
         </div>
         <ThemeToggle />
       </section>
+
+      <SettingsControls />
 
       <section className="card" style={{ padding: 18, background: "var(--surface)" }}>
         <div className="lower" style={{ fontWeight: 800, fontSize: 15, marginBottom: 10 }}>

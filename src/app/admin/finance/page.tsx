@@ -6,7 +6,7 @@
  */
 import { listTransactions, listPayoutRuns, heldPayouts } from "@/lib/queries/admin";
 import { formatCast } from "@/lib/cast";
-import { StatCard, StudioCard, StudioPageHead, Pill, gbpShort, type PillTone } from "@/components/studio-ui";
+import { StatCard, StudioCard, StudioPageHead, Pill, Bars, AreaSpark, gbpShort, type PillTone } from "@/components/studio-ui";
 import { AxRefund } from "@/components/admin-x/AxRefund";
 import { AxPayoutRun } from "@/components/admin-x/AxPayoutRun";
 
@@ -16,6 +16,11 @@ const TXN_TONE: Record<string, PillTone> = { settled: "ok", pending: "warn", rev
 const RUN_TONE: Record<string, PillTone> = { paid: "ok", scheduled: "info", held: "warn" };
 
 const GMV_SPARK = [2.78, 3.14, 3.42, 3.71, 4.08].map((v) => Math.round(v * 1e6));
+
+// Illustrative 12-month trend series (the demo DB holds point-in-time rows, not a backfilled history).
+const MONTHS = ["jun", "jul", "aug", "sep", "oct", "nov", "dec", "jan", "feb", "mar", "apr", "may"];
+const VOLUME = [1.82, 1.94, 2.11, 2.34, 2.28, 2.61, 2.92, 2.78, 3.14, 3.42, 3.71, 4.08].map((v) => Math.round(v * 1e6));
+const PAYOUTS = [1.42, 1.55, 1.68, 1.86, 1.81, 2.08, 2.33, 2.21, 2.5, 2.72, 2.95, 3.24].map((v) => Math.round(v * 1e6));
 
 export default async function AdminFinancePage() {
   const [txns, runs, held] = await Promise.all([listTransactions(), listPayoutRuns(), heldPayouts()]);
@@ -126,6 +131,23 @@ export default async function AdminFinancePage() {
           </div>
           <AxPayoutRun heldCount={held.length} holdRunId={runs.find((r) => r.status === "scheduled")?.id} />
         </div>
+      </div>
+
+      <div className="st-split" style={{ marginTop: 16 }}>
+        <StudioCard title="processed volume · 12 months" sub="all CAST flowing through the platform">
+          <Bars data={VOLUME} labels={MONTHS} h={180} fmt={(v) => formatCast(v) + " CAST"} />
+        </StudioCard>
+        <StudioCard title="payouts to creators · 12 months" sub="cleared each month">
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
+            <span className="brand-grad-text tnum stat-num" style={{ fontSize: 30 }}>
+              {gbpShort(PAYOUTS[PAYOUTS.length - 1])}
+            </span>
+            <span className="lower" style={{ color: "var(--ink-3)", fontSize: 13, fontWeight: 700 }}>
+              last run
+            </span>
+          </div>
+          <AreaSpark data={PAYOUTS} stroke="#10b981" fill="rgba(16,185,129,0.18)" h={150} />
+        </StudioCard>
       </div>
 
       <div className="st-split" style={{ marginTop: 16 }}>

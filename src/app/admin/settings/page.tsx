@@ -13,6 +13,17 @@ import { StudioCard, StudioPageHead, Pill, type PillTone } from "@/components/st
 import { Icon } from "@/components/ui/Icon";
 import { AxSetting, type AxField } from "@/components/admin-x/AxSetting";
 import { AxFlagToggle } from "@/components/admin-x/AxFlagToggle";
+import {
+  AxPaymentMethods,
+  AxPolicies,
+  AxPages,
+  AxBrandingExtras,
+  type PaymentMethodsValue,
+  type PoliciesValue,
+  type PagesValue,
+  type AnnouncementValue,
+  type BrandingExtrasValue,
+} from "@/components/admin-x/AxControls";
 
 export const dynamic = "force-dynamic";
 
@@ -61,8 +72,63 @@ const FEES_FIELDS: AxField[] = [
   { name: "payoutHoldDays", label: "payout hold", kind: "number", suffix: "days", hint: "clearing window before a payout releases" },
 ];
 
+// ---- control-center defaults (seeded from the prototype) ----
+
+const mk = (id: string, label: string, on = true) => ({ id, label, on });
+
+const DEFAULT_PAYMENT_METHODS: PaymentMethodsValue = {
+  topup: [
+    mk("apple-pay", "apple pay"),
+    mk("google-pay", "google pay"),
+    mk("paypal", "paypal"),
+    mk("venmo", "venmo"),
+    mk("cashapp", "cash app", false),
+    mk("visa", "visa"),
+    mk("mastercard", "mastercard"),
+    mk("amex", "american express"),
+    mk("sepa", "sepa direct debit"),
+    mk("ach", "ach", false),
+    mk("faster", "faster payments"),
+    mk("ideal", "ideal", false),
+    mk("klarna", "klarna", false),
+    mk("usdc", "usdc", false),
+  ],
+  payout: [
+    mk("bank", "bank transfer"),
+    mk("instant", "instant payout", false),
+    mk("paypal", "paypal"),
+    mk("venmo", "venmo", false),
+    mk("wise", "wise"),
+    mk("payoneer", "payoneer", false),
+    mk("usdc", "usdc", false),
+  ],
+};
+
+const DEFAULT_POLICIES: PoliciesValue = {
+  minAgeWatch: 13,
+  minAgeEarn: 18,
+  strikes: 3,
+  strikeAction: "suspend then ban",
+  autoHoldHighRisk: true,
+  membersOnlyChatDefault: false,
+  blockedTerms: ["scam", "free crypto", "dm me", "telegram"],
+  guidelines:
+    "be respectful. no harassment, hate speech, illegal content or spam. creators are responsible for the content they broadcast. report anything that breaks these rules.",
+};
+
+const DEFAULT_PAGES: PagesValue = {
+  pages: [
+    { id: "terms", title: "terms of service", path: "/legal/terms", published: true, body: "the terms governing use of the platform." },
+    { id: "privacy", title: "privacy policy", path: "/legal/privacy", published: true, body: "how we collect, use and protect personal data." },
+    { id: "guidelines", title: "community guidelines", path: "/legal/guidelines", published: true, body: "the rules everyone agrees to." },
+    { id: "help", title: "help center", path: "/help", published: true, body: "answers to common questions for fans and creators." },
+  ],
+};
+
+const DEFAULT_ANNOUNCEMENT: AnnouncementValue = { on: false, text: "" };
+
 export default async function AdminSettingsPage() {
-  const [flags, team, audit, brand, fees] = await Promise.all([
+  const [flags, team, audit, brand, fees, payMethods, policies, pages, announcement, brandTheme] = await Promise.all([
     listFlags(),
     listTeam(),
     listAudit(),
@@ -76,6 +142,15 @@ export default async function AdminSettingsPage() {
       takeRatePct: Math.round(economy.platformTakeRate * 100),
       castPerGbp: economy.castPerGbp,
       payoutHoldDays: economy.payoutHoldDays,
+    }),
+    getSetting<PaymentMethodsValue>("payment-methods", DEFAULT_PAYMENT_METHODS),
+    getSetting<PoliciesValue>("policies", DEFAULT_POLICIES),
+    getSetting<PagesValue>("pages", DEFAULT_PAGES),
+    getSetting<AnnouncementValue>("announcement", DEFAULT_ANNOUNCEMENT),
+    getSetting<BrandingExtrasValue>("branding-theme", {
+      brandColor: "#8b5cf6",
+      brandColor2: "#ec4899",
+      defaultTheme: branding.defaultTheme,
     }),
   ]);
 
@@ -96,6 +171,9 @@ export default async function AdminSettingsPage() {
           <AxSetting settingKey="branding" fields={BRANDING_FIELDS} initial={{ ...brand }} saveLabel="save branding" />
         </StudioCard>
 
+        {/* branding — logo, colours, default theme */}
+        <AxBrandingExtras initial={brandTheme} />
+
         {/* fees & CAST economy */}
         <StudioCard title="fees & CAST economy" sub="the platform credit and the cut technotainment takes">
           <AxSetting settingKey="fees" fields={FEES_FIELDS} initial={{ ...fees }} saveLabel="save fees" />
@@ -104,6 +182,15 @@ export default async function AdminSettingsPage() {
             never issued balances. the take rate applies to new creators.
           </div>
         </StudioCard>
+
+        {/* payment methods — top-up + payout rails */}
+        <AxPaymentMethods initial={payMethods} />
+
+        {/* policies — age, enforcement, blocked terms, guidelines */}
+        <AxPolicies initial={policies} />
+
+        {/* pages / cms + system announcement */}
+        <AxPages initialPages={pages} initialAnnouncement={announcement} />
 
         {/* feature flags */}
         <div className="st-split-even">

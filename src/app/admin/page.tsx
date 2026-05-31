@@ -5,7 +5,7 @@
  * holds point-in-time rows, not a backfilled history). Spec: prototype/v4/admin-overview.jsx.
  */
 import Link from "next/link";
-import { adminOverview, listAudit } from "@/lib/queries/admin";
+import { adminOverview, listAudit, listApplications, listCreators } from "@/lib/queries/admin";
 import { formatCast } from "@/lib/cast";
 import {
   StatCard,
@@ -49,9 +49,16 @@ const REV_LINES: SegBarSegment[] = [
 export default async function AdminOverviewPage() {
   let kpi: Awaited<ReturnType<typeof adminOverview>> | null = null;
   let audit: Awaited<ReturnType<typeof listAudit>> = [];
+  let applications: Awaited<ReturnType<typeof listApplications>> = [];
+  let creators: Awaited<ReturnType<typeof listCreators>> = [];
   let failed = false;
   try {
-    [kpi, audit] = await Promise.all([adminOverview(), listAudit(5)]);
+    [kpi, audit, applications, creators] = await Promise.all([
+      adminOverview(),
+      listAudit(5),
+      listApplications(),
+      listCreators(),
+    ]);
   } catch {
     failed = true;
   }
@@ -76,9 +83,12 @@ export default async function AdminOverviewPage() {
   const revTotal = REV_LINES.reduce((s, r) => s + r.cast, 0);
   const k = kpi;
 
+  const kycPending = creators.filter((c) => c.user?.kyc === "pending").length;
+
   const attention = [
     { label: "open reports", n: k.openReports, route: "/admin/moderation", icon: "flame" },
-    { label: "active creators", n: k.creatorCount, route: "/admin/creators", icon: "sparkle" },
+    { label: "creator applications", n: applications.length, route: "/admin/creators", icon: "sparkle" },
+    { label: "kyc pending", n: kycPending, route: "/admin/creators", icon: "check" },
     { label: "pending payouts", n: k.pendingPayoutCast, route: "/admin/finance", icon: "wallet", cast: true },
     { label: "total users", n: k.userCount, route: "/admin/users", icon: "user" },
   ];

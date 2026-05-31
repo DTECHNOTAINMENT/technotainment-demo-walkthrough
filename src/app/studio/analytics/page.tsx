@@ -5,9 +5,10 @@
  */
 import { redirect } from "next/navigation";
 import { requireCreatorChannel } from "@/lib/studio";
-import { analyticsSummary } from "@/lib/queries/studio";
+import { analyticsSummary, studioDashboardExtras } from "@/lib/queries/studio";
 import { formatCast, formatFiat } from "@/lib/cast";
 import { StatCard, StudioCard, StudioPageHead, Bars, SegBar, Meter, type SegBarSegment } from "@/components/studio-ui";
+import { StAnalytics } from "@/components/studio/StAnalytics";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,7 @@ export default async function StudioAnalyticsPage() {
   }
 
   const { totalViews, revenueCast, byKind, txnCount } = await analyticsSummary(channelId);
+  const extras = await studioDashboardExtras(channelId);
   const kinds = Object.entries(byKind).sort((a, b) => b[1] - a[1]);
   const maxKind = kinds.reduce((m, [, v]) => Math.max(m, v), 0) || 1;
   const segTotal = kinds.reduce((a, [, v]) => a + v, 0) || 1;
@@ -60,6 +62,13 @@ export default async function StudioAnalyticsPage() {
         <StatCard label="total views" icon="eye" value={formatCast(totalViews)} unit="all videos" sparkColor="#06b6d4" />
         <StatCard label="transactions" icon="trend" value={formatCast(txnCount)} unit="settled" sparkColor="#10b981" />
       </div>
+
+      <StAnalytics
+        months={extras.months}
+        earnSeries={extras.earnSeries}
+        viewSeries={extras.viewSeries}
+        topContent={extras.topContent.map((c) => ({ id: c.id, title: c.title, views: c.views, castEarned: c.castEarned }))}
+      />
 
       <div className="st-split" style={{ marginTop: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
