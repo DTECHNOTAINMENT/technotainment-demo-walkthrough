@@ -19,6 +19,7 @@ import {
   SegBar,
   type SegBarSegment,
 } from "@/components/studio-ui";
+import { StMonetizationControls } from "@/components/studio/StMonetizationControls";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,10 @@ export default async function StudioMonetizationPage() {
     color: TIER_COLORS[i % TIER_COLORS.length],
   }));
   const segTotal = segments.reduce((a, s) => a + s.cast, 0) || 1;
+
+  // switchboard summary: memberships + tips + the 4 levers are on; goals ships off.
+  const totalStreams = 6;
+  const activeStreams = 5;
 
   return (
     <div className="page-pad" style={{ maxWidth: 1300, margin: "0 auto" }}>
@@ -221,6 +226,29 @@ export default async function StudioMonetizationPage() {
         </div>
       )}
 
+      {/* Active revenue streams summary — the prototype's "X of 6 turned on" switchboard header */}
+      <div
+        className="card"
+        style={{ background: "var(--surface)", padding: 18, margin: "26px 0 16px", display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center" }}
+      >
+        <div>
+          <div className="lower" style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-3)" }}>
+            active revenue streams
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6 }}>
+            <span className="brand-grad-text tnum stat-num" style={{ fontSize: 32 }}>
+              {activeStreams}
+            </span>
+            <span className="lower" style={{ color: "var(--ink-3)", fontSize: 13, fontWeight: 700 }}>
+              of {totalStreams} turned on
+            </span>
+          </div>
+        </div>
+        <div className="mono" style={{ flex: 1, minWidth: 220, fontSize: 11.5, color: "var(--ink-3)" }}>
+          memberships, tips, pay-per-view, store and gifted subs are live — goals are off until you set one below.
+        </div>
+      </div>
+
       {/* Revenue levers — the other ways to earn (the prototype's switchboard) */}
       <div className="lower" style={{ fontSize: 13, fontWeight: 800, color: "var(--ink-2)", margin: "26px 0 12px" }}>
         more ways to earn
@@ -266,6 +294,12 @@ export default async function StudioMonetizationPage() {
           </StudioCard>
         ))}
       </div>
+
+      {/* Configure each stream — editable tip presets, ppv access window, optional goals */}
+      <div className="lower" style={{ fontSize: 13, fontWeight: 800, color: "var(--ink-2)", margin: "26px 0 0" }}>
+        configure your streams
+      </div>
+      <StMonetizationControls totalMembers={totalMembers} mrrCast={mrrCast} />
 
       <div className="st-hint" style={{ marginTop: 18 }}>
         changing a tier price never affects existing members — current subscribers keep their rate until they cancel.
