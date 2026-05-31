@@ -725,10 +725,18 @@ h1, h2, h3, p { text-wrap: pretty; }
 /* Hero overlay: bottom-aligned over the image on desktop … */
 .marquee-inner { position: absolute; inset: 0; }
 @media (max-width: 768px) {
-  /* … but on mobile the title wraps and the actions stack, so let the card GROW to fit its
-     content (in-flow overlay + min-height) instead of clipping the eyebrow off the top. */
-  .marquee { aspect-ratio: auto; min-height: 62vw; }
-  .marquee-inner { position: relative; inset: auto; min-height: 62vw; }
+  /* … but on mobile the title wraps and the actions stack, so the card SIZES TO ITS CONTENT
+     (in-flow overlay, no fixed aspect-ratio) — nothing can spill off the top and get clipped.
+     A min-height keeps it feeling like a hero; tighter padding keeps it compact. */
+  .marquee { aspect-ratio: auto; min-height: 0; }
+  .marquee-inner {
+    position: relative; inset: auto;
+    min-height: 60vw;
+    justify-content: flex-end;
+    padding: 18px 18px 20px !important;
+    gap: 0;
+  }
+  .marquee-inner h1 { font-size: 30px !important; line-height: 1.05 !important; }
 }
 .marquee::after {
   content: ""; position: absolute; inset: 0;
