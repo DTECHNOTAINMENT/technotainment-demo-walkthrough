@@ -30,9 +30,10 @@ function genDemoTxnId(): string {
 export async function balanceOf(userId: string): Promise<Cast> {
   try {
     const rows = await prisma.walletEntry.findMany({ where: { userId }, select: { deltaCast: true } });
-    if (rows.length) return deriveBalance(rows);
-    return DEMO_BALANCE; // no ledger rows (no-DB / fresh) → demo balance so the wallet shows money
+    // A real (DB-connected) user with no entries genuinely has a zero balance — return it.
+    return deriveBalance(rows);
   } catch {
+    // No DB (demo mode) → show the demo wallet balance so the wallet isn't empty.
     return DEMO_BALANCE;
   }
 }
