@@ -36,6 +36,7 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/studio/audience", label: "audience", icon: "users" },
       { href: "/studio/memberships", label: "memberships", icon: "heart" },
+      { href: "/studio/monetization", label: "monetization", icon: "cast" },
       { href: "/studio/analytics", label: "analytics", icon: "trend" },
     ],
   },

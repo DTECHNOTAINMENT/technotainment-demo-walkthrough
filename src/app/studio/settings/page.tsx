@@ -1,6 +1,7 @@
 /**
- * /studio/settings — channel identity (name, handle, category, bio, brand colours). Lightly
- * editable form fed from the creator record; persistence ships in a later phase.
+ * /studio/settings — channel identity, payout & tax, moderation and team. Tabbed settings
+ * fed from the creator/channel record. There's no settings-write endpoint in this phase, so
+ * the form is presentational (controlled-but-local); persistence ships in a later phase.
  */
 import { redirect } from "next/navigation";
 import { requireCreatorChannel } from "@/lib/studio";
@@ -21,8 +22,12 @@ export default async function StudioSettingsPage() {
   }
 
   return (
-    <div className="page-pad" style={{ maxWidth: 1000, margin: "0 auto" }}>
-      <StudioPageHead eyebrow="creator studio" title="settings" sub="your channel identity, brand and bio." />
+    <div className="page-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <StudioPageHead
+        eyebrow="creator studio"
+        title="settings"
+        sub="your channel identity, payout details, moderation rules and team access."
+      />
       <SxSettings
         name={creator.name}
         handle={creator.handle}
@@ -30,6 +35,9 @@ export default async function StudioSettingsPage() {
         bio={creator.bio ?? channelBio ?? ""}
         brand={creator.brand}
         brand2={creator.brand2}
+        takeRatePct={creator.takeRatePct}
+        payoutLabel="bank transfer · barclays"
+        payoutSub="•••• 4417 · GBP"
       />
     </div>
   );
