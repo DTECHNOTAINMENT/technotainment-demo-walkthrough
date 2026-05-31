@@ -1,44 +1,54 @@
 /**
- * Admin moderation — KPI cards + the report queue, highest severity first (listReports
- * orders severity desc, then newest). Each row shows a type icon, target, reason, report
- * count, severity + status pills, and investigate / strike / remove / dismiss actions
- * (AdReportActions → /api/admin/action). Server component. Spec: prototype/v4/admin-moderation.jsx.
+ * Admin moderation — KPI cards + a two-tab workspace (AxModeration): the report queue with a
+ * severity filter (each row → investigate / strike / remove / dismiss via AdReportActions) and
+ * the live monitor (a grid of every public live stream). Server component reads listReports +
+ * listLiveStreams (both no-DB safe) and hands serialisable rows to the client tab switcher.
+ * Spec: prototype/v4/admin-moderation.jsx.
  */
 import { listReports } from "@/lib/queries/admin";
-import { StatCard, StudioCard, StudioPageHead, Pill, type PillTone } from "@/components/studio-ui";
-import { Icon } from "@/components/ui/Icon";
-import { AdReportActions } from "@/components/admin/AdReportActions";
+import { listLiveStreams } from "@/lib/queries/public";
+import { StatCard, StudioPageHead } from "@/components/studio-ui";
+import { AxModeration, type ModReport, type LiveStreamRow } from "@/components/admin-x/AxModeration";
 
 export const dynamic = "force-dynamic";
 
-const SEV_TONE: Record<string, PillTone> = { high: "live", medium: "warn", low: "neutral" };
-const STATUS_TONE: Record<string, PillTone> = {
-  open: "warn",
-  investigating: "info",
-  actioned: "ok",
-  dismissed: "neutral",
-};
-const TYPE_ICON: Record<string, string> = {
-  stream: "flame",
-  product: "bag",
-  user: "user",
-  vod: "film",
-  clip: "play",
-};
-
-const COLS = "40px 1.5fr 110px 80px 100px auto";
-
 export default async function AdminModerationPage() {
   let reports: Awaited<ReturnType<typeof listReports>> = [];
-  let failed = false;
+  let liveRaw: Awaited<ReturnType<typeof listLiveStreams>> = [];
   try {
-    reports = await listReports();
+    [reports, liveRaw] = await Promise.all([listReports(), listLiveStreams()]);
   } catch {
-    failed = true;
+    /* no-DB fallbacks already applied inside the queries; render empties on hard failure */
   }
 
   const openCount = reports.filter((r) => r.status === "open").length;
   const highCount = reports.filter((r) => r.severity === "high").length;
+
+  const modReports: ModReport[] = reports.map((r) => ({
+    id: r.id,
+    targetType: r.targetType,
+    targetId: r.targetId,
+    reason: r.reason,
+    reportCount: r.reportCount,
+    severity: r.severity,
+    status: r.status as ModReport["status"],
+  }));
+
+  // Mark one stream "flagged" if its creator is the subject of an open stream/user report.
+  const flaggedNames = new Set(
+    reports.filter((r) => r.status === "open" && (r.targetType === "stream" || r.targetType === "user")).map((r) => r.targetId.toLowerCase()),
+  );
+  const live: LiveStreamRow[] = liveRaw.map((s) => {
+    const creatorName = s.channel.creator.name;
+    return {
+      id: s.id,
+      title: s.title,
+      category: s.category,
+      creatorName,
+      viewers: s.viewers,
+      flagged: flaggedNames.has(creatorName.toLowerCase()) || flaggedNames.has(s.channel.creator.handle.toLowerCase()),
+    };
+  });
 
   return (
     <div className="page-pad" style={{ maxWidth: 1400, margin: "0 auto" }}>
@@ -95,73 +105,7 @@ export default async function AdminModerationPage() {
         />
       </div>
 
-      <StudioCard pad={false} style={{ marginTop: 18 }}>
-        <div className="st-row head" style={{ gridTemplateColumns: COLS }}>
-          <span />
-          <span>target · reason</span>
-          <span>severity</span>
-          <span style={{ textAlign: "right" }}>reports</span>
-          <span>status</span>
-          <span style={{ textAlign: "right" }}>action</span>
-        </div>
-
-        {failed ? (
-          <div className="lower" style={{ padding: "32px 18px", textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
-            couldn&rsquo;t load the report queue right now. try refreshing.
-          </div>
-        ) : reports.length === 0 ? (
-          <div className="lower" style={{ padding: "32px 18px", textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
-            nothing in the queue — all clear.
-          </div>
-        ) : (
-          reports.map((r) => (
-            <div key={r.id} className="st-row" style={{ gridTemplateColumns: COLS }}>
-              <span
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 9,
-                  background: "var(--surface-2)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--ink-3)",
-                }}
-              >
-                <Icon name={TYPE_ICON[r.targetType] ?? "flame"} size={15} stroke={2} />
-              </span>
-              <div style={{ minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {r.targetId}
-                </div>
-                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>
-                  {r.id} · {r.reason}
-                </div>
-              </div>
-              <div>
-                <Pill tone={SEV_TONE[r.severity] ?? "neutral"}>{r.severity}</Pill>
-              </div>
-              <div className="tnum" style={{ textAlign: "right", fontSize: 13, fontWeight: 800 }}>
-                {r.reportCount}
-              </div>
-              <div>
-                <Pill tone={STATUS_TONE[r.status] ?? "neutral"}>{r.status}</Pill>
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <AdReportActions id={r.id} status={r.status} />
-              </div>
-            </div>
-          ))
-        )}
-      </StudioCard>
+      <AxModeration reports={modReports} live={live} />
     </div>
   );
 }

@@ -59,6 +59,16 @@ const TECHNICAL: Array<[string, boolean]> = [
   ["llms.txt (AI discovery)", false],
 ];
 
+const QUICK_WINS: Array<{ title: string; detail: string; impact: "high" | "med" | "low" }> = [
+  { title: "ship llms.txt", detail: "expose a curated map for AI crawlers — already built, flag-off", impact: "high" },
+  { title: "add hreflang tags", detail: "unlock EU/US regional pages once those regions go live", impact: "high" },
+  { title: "fix 1,240 excluded pages", detail: "mostly thin clip pages — add descriptions to index them", impact: "med" },
+  { title: "internal links to /explore", detail: "pass authority from channel pages into category hubs", impact: "med" },
+  { title: "compress og-images", detail: "trim render time on the dynamic og endpoint", impact: "low" },
+];
+
+const IMPACT_TONE: Record<string, PillTone> = { high: "ok", med: "warn", low: "neutral" };
+
 export default async function AdminGrowthPage() {
   return (
     <div className="page-pad" style={{ maxWidth: 1450, margin: "0 auto" }}>
@@ -276,6 +286,28 @@ export default async function AdminGrowthPage() {
                 </div>
               ))}
             </div>
+          </StudioCard>
+
+          <StudioCard title="quick wins" sub="highest-leverage SEO work, ranked by impact" pad={false}>
+            {QUICK_WINS.map((w, i) => (
+              <div
+                key={w.title}
+                className="st-row"
+                style={{ gridTemplateColumns: "1fr 60px", alignItems: "flex-start", borderTop: i ? "1px solid var(--hairline)" : "none" }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div className="lower" style={{ fontSize: 13, fontWeight: 700 }}>
+                    {w.title}
+                  </div>
+                  <div className="lower" style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 2 }}>
+                    {w.detail}
+                  </div>
+                </div>
+                <span style={{ textAlign: "right" }}>
+                  <Pill tone={IMPACT_TONE[w.impact] ?? "neutral"}>{w.impact}</Pill>
+                </span>
+              </div>
+            ))}
           </StudioCard>
         </div>
       </div>

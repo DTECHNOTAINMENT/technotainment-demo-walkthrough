@@ -3,8 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { library } from "@/lib/queries/viewer";
+import { listRecentVideos } from "@/lib/queries/public";
 import { formatCast } from "@/lib/cast";
 import { PageHeader } from "@/components/viewer/shared";
+import { ContinueWatching, toContinueItems } from "@/components/viewer/ContinueWatching";
 
 export const metadata: Metadata = { title: "library", robots: { index: false } };
 
@@ -12,7 +14,11 @@ export default async function LibraryPage() {
   const session = await getCurrentSession();
   if (!session) redirect("/sign-in?next=/library");
 
-  const { memberships, purchases } = await library(session.userId);
+  const [{ memberships, purchases }, recent] = await Promise.all([
+    library(session.userId),
+    listRecentVideos(6).catch(() => []),
+  ]);
+  const continueItems = toContinueItems(recent, 4);
   const empty = memberships.length === 0 && purchases.length === 0;
 
   return (
@@ -20,9 +26,10 @@ export default async function LibraryPage() {
       <PageHeader
         eyebrow="your library"
         title="library"
-        sub="your memberships and everything you've unlocked with CAST."
+        sub="continue where you left off · your memberships · everything you've unlocked with CAST."
       />
       <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+      <ContinueWatching items={continueItems} />
       {empty ? (
         <div className="card" style={{ padding: 40, textAlign: "center", background: "var(--surface)" }}>
           <div className="lower" style={{ fontWeight: 800, fontSize: 16 }}>
