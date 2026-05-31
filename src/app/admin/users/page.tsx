@@ -87,6 +87,8 @@ export default async function AdminUsersPage() {
       </div>
 
       <StudioCard pad={false} style={{ marginTop: 18 }}>
+        <div className="tbl-scroll">
+        <div style={{ minWidth: 720 }}>
         <div className="st-row head" style={{ gridTemplateColumns: COLS }}>
           <span>user</span>
           <span>kyc</span>
@@ -151,6 +153,8 @@ export default async function AdminUsersPage() {
             </div>
           ))
         )}
+        </div>
+        </div>
       </StudioCard>
     </div>
   );

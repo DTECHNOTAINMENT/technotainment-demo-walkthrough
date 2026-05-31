@@ -190,7 +190,7 @@ export function StVideoEditor({ id, initial, origin }: StVideoEditorProps) {
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 380px)", gap: 16, alignItems: "start" }}>
+    <div className="split-2" style={{ alignItems: "start", ["--split-2-cols" as string]: "minmax(0, 1fr) minmax(0, 380px)" }}>
       {/* LEFT — details + SEO */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <section className="card" style={{ background: "var(--surface)" }}>

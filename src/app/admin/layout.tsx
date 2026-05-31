@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { getCurrentSession } from "@/lib/session";
 import { ThemeToggle } from "@/components/theme";
 import { AdSidebar } from "@/components/admin/AdSidebar";
+import { AdMobileNav } from "@/components/admin/AdMobileNav";
 import { AdSignOut } from "@/components/admin/AdSignOut";
 
 export const metadata: Metadata = {
@@ -33,6 +34,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <div className="main-col">
         <header className="topbar theme-fade">
           <div style={{ padding: "0 18px", minHeight: 60, display: "flex", alignItems: "center", gap: 14 }}>
+            <AdMobileNav />
+
             <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25, whiteSpace: "nowrap" }}>
               <span
                 style={{
@@ -53,7 +56,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <div style={{ flex: 1 }} />
 
             <span
-              className="studio-badge"
+              className="studio-badge sb-hide-mobile"
               style={{ borderColor: "rgba(16,185,129,0.3)", color: "#10b981" }}
             >
               <span

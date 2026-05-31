@@ -2,31 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Icon } from "@/components/ui/Icon";
 import type { NavItem } from "./NavLinks";
 
 /**
- * Mobile bottom-nav (`.bn`). Shown below the `md` breakpoint via the layout's wrapper.
+ * Mobile bottom-nav (`.bn`). The `.bn` class hides itself at >=1024px (globals.css),
+ * so this only shows on phone/tablet where the sidebar is collapsed.
  * Mirrors the sidebar's primary destinations, with active-state from usePathname.
  */
 export function BottomNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
   return (
-    <nav
-      aria-label="primary"
-      style={{
-        position: "fixed",
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 40,
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "stretch",
-        background: "var(--surface)",
-        borderTop: "1px solid var(--hairline)",
-        boxShadow: "var(--shadow-pop)",
-      }}
-    >
+    <nav className="bn" aria-label="primary">
       {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
@@ -34,28 +21,11 @@ export function BottomNav({ items }: { items: NavItem[] }) {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className="lower"
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 4,
-              padding: "10px 4px",
-              fontSize: 11,
-              fontWeight: active ? 800 : 600,
-              color: active ? "var(--ink-1)" : "var(--ink-3)",
-            }}
+            className={`bn-item lower${active ? " active" : ""}`}
           >
-            <span
-              aria-hidden
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 999,
-                background: active ? "var(--brand-gradient)" : "var(--surface-3)",
-              }}
-            />
+            {item.icon ? (
+              <Icon name={item.icon} size={22} stroke={active ? 2.4 : 1.8} />
+            ) : null}
             {item.label}
           </Link>
         );

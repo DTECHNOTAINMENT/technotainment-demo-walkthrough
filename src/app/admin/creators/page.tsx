@@ -129,6 +129,8 @@ export default async function AdminCreatorsPage() {
 
       {/* roster */}
       <StudioCard pad={false} style={{ marginTop: 16 }}>
+        <div className="tbl-scroll">
+        <div style={{ minWidth: 640 }}>
         <div className="st-row head" style={{ gridTemplateColumns: ROSTER_COLS }}>
           <span>creator</span>
           <span>status</span>
@@ -200,6 +202,8 @@ export default async function AdminCreatorsPage() {
             );
           })
         )}
+        </div>
+        </div>
       </StudioCard>
     </div>
   );

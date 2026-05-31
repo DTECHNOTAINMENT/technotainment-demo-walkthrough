@@ -24,7 +24,7 @@ export function Topbar({
       className="topbar"
       style={{ position: "sticky", top: 0, zIndex: 26 }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 18px" }}>
+      <div className="topbar-row" style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 18px" }}>
         <SearchBox />
 
         <div style={{ flex: 1 }} />

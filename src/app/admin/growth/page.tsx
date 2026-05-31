@@ -132,6 +132,8 @@ export default async function AdminGrowthPage() {
           </StudioCard>
 
           <StudioCard title="top search queries" sub="what people search to find you" pad={false}>
+            <div className="tbl-scroll">
+            <div style={{ minWidth: 380 }}>
             <div className="st-row head" style={{ gridTemplateColumns: "1fr 90px 90px 70px" }}>
               <span>query</span>
               <span style={{ textAlign: "right" }}>clicks</span>
@@ -155,6 +157,8 @@ export default async function AdminGrowthPage() {
                 </span>
               </div>
             ))}
+            </div>
+            </div>
           </StudioCard>
 
           <StudioCard title="metadata defaults" sub={`templates applied across ${branding.appName}`}>

@@ -89,6 +89,8 @@ export function AxModeration({ reports, live }: { reports: ModReport[]; live: Li
           </div>
 
           <StudioCard pad={false}>
+            <div className="tbl-scroll">
+            <div style={{ minWidth: 620 }}>
             <div className="st-row head" style={{ gridTemplateColumns: COLS }}>
               <span />
               <span>target · reason</span>
@@ -142,6 +144,8 @@ export function AxModeration({ reports, live }: { reports: ModReport[]; live: Li
                 </div>
               ))
             )}
+            </div>
+            </div>
           </StudioCard>
         </>
       )}
