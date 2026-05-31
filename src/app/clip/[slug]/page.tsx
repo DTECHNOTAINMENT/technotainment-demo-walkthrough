@@ -78,7 +78,7 @@ export default async function ClipPage({ params }: Props) {
         />
         <div style={{ position: "relative", zIndex: 1, borderRadius: 16, overflow: "hidden", boxShadow: "0 36px 70px -30px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03)" }}>
           {playback ? (
-            <VideoPlayer hlsUrl={playback.hlsUrl} poster={playback.poster} live={false} />
+            <VideoPlayer hlsUrl={playback.hlsUrl} poster={clip.thumbUrl} live={false} />
           ) : (
             <div
               style={{

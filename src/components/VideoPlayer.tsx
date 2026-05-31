@@ -58,7 +58,10 @@ export function VideoPlayer({
       style={{
         position: "relative",
         aspectRatio: "16 / 9",
-        background: "#000",
+        // Poster image as the container background so there is ALWAYS a visible frame where the
+        // video sits (the <video> poster can be blank while HLS loads, and the demo test stream
+        // can be slow/unreachable — this guarantees an image is shown, never an empty black box).
+        background: poster ? `#000 url(${poster}) center/cover no-repeat` : "#000",
         borderRadius: 14,
         overflow: "hidden",
       }}
@@ -68,10 +71,10 @@ export function VideoPlayer({
         poster={poster}
         controls
         playsInline
-        style={{ width: "100%", height: "100%", display: "block" }}
+        style={{ width: "100%", height: "100%", display: "block", position: "relative", zIndex: 1 }}
       />
       {live && (
-        <span className="live-pill" style={{ position: "absolute", top: 12, left: 12 }}>
+        <span className="live-pill" style={{ position: "absolute", top: 12, left: 12, zIndex: 2 }}>
           live
         </span>
       )}
@@ -80,14 +83,21 @@ export function VideoPlayer({
           style={{
             position: "absolute",
             inset: 0,
+            zIndex: 2,
             display: "grid",
             placeItems: "center",
             color: "#fff",
-            background: "rgba(0,0,0,0.6)",
-            fontSize: 14,
+            background: poster ? `rgba(0,0,0,0.45) url(${poster}) center/cover no-repeat` : "rgba(0,0,0,0.6)",
+            textAlign: "center",
+            padding: 16,
           }}
         >
-          stream unavailable
+          <div style={{ background: "rgba(0,0,0,0.55)", padding: "14px 18px", borderRadius: 12, backdropFilter: "blur(4px)" }}>
+            <div style={{ fontSize: 14, fontWeight: 800 }} className="lower">demo preview</div>
+            <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }} className="lower">
+              video playback connects when Mux is configured.
+            </div>
+          </div>
         </div>
       )}
     </div>

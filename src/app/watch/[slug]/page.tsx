@@ -91,7 +91,7 @@ export default async function WatchPage({ params }: Props) {
         />
         <div style={{ position: "relative", zIndex: 1, borderRadius: 18, overflow: "hidden", boxShadow: "0 40px 80px -32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03)" }}>
           {playback ? (
-            <VideoPlayer hlsUrl={playback.hlsUrl} poster={playback.poster} live={false} />
+            <VideoPlayer hlsUrl={playback.hlsUrl} poster={video.thumbUrl} live={false} />
           ) : (
             <div
               style={{
