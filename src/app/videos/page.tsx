@@ -5,6 +5,7 @@ import { listRecentVideos } from "@/lib/queries/public";
 import { buildMetadata } from "@/lib/seo/meta";
 import { VideoCard } from "@/components/public/cards";
 import { PageHeader } from "@/components/viewer/shared";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const revalidate = 60;
 
@@ -18,7 +19,8 @@ export default async function VideosPage() {
   const videos = await listRecentVideos(48).catch(() => []);
 
   return (
-    <main style={{ maxWidth: 1400, margin: "0 auto", padding: "32px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 1400, margin: "0 auto", padding: "32px 24px 96px" }}>
       <PageHeader
         eyebrow="on demand"
         title="videos"
@@ -48,5 +50,6 @@ export default async function VideosPage() {
         </p>
       )}
     </main>
+    </PublicShell>
   );
 }

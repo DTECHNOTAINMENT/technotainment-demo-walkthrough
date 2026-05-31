@@ -8,6 +8,7 @@ import { buildMetadata } from "@/lib/seo/meta";
 import { VideoCard } from "@/components/public/cards";
 import { Avatar, formatNum } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,8 @@ export default async function SearchPage({ searchParams }: Props) {
   const hasResults = total > 0;
 
   return (
-    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 24px 96px" }}>
       {/* search bar */}
       <form method="GET" action="/search" style={{ display: "flex", gap: 8, marginBottom: 24, maxWidth: 540 }}>
         <div
@@ -134,5 +136,6 @@ export default async function SearchPage({ searchParams }: Props) {
         </section>
       )}
     </main>
+    </PublicShell>
   );
 }

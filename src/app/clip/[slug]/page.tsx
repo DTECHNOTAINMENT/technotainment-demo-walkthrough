@@ -13,6 +13,7 @@ import { Avatar } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
 import { video as videoProvider } from "@/lib/integrations";
 import { formatCast } from "@/lib/cast";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const revalidate = 60;
 
@@ -61,7 +62,8 @@ export default async function ClipPage({ params }: Props) {
   const playback = locked ? null : await videoProvider.getPlayback(clip.id);
 
   return (
-    <main style={{ maxWidth: 800, margin: "0 auto", padding: "28px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 800, margin: "0 auto", padding: "28px 24px 96px" }}>
       <JsonLd data={jsonLd} />
 
       <div style={{ position: "relative" }}>
@@ -126,5 +128,6 @@ export default async function ClipPage({ params }: Props) {
         </div>
       )}
     </main>
+    </PublicShell>
   );
 }

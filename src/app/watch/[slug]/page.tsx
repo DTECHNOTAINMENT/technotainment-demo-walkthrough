@@ -15,6 +15,7 @@ import { Avatar } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
 import { video as videoProvider } from "@/lib/integrations";
 import { formatCast } from "@/lib/cast";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const revalidate = 60;
 
@@ -73,7 +74,8 @@ export default async function WatchPage({ params }: Props) {
   const playback = locked ? null : await videoProvider.getPlayback(video.id);
 
   return (
-    <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px 96px" }}>
       <JsonLd data={jsonLd} />
 
       {/* PLAYER with ambient glow */}
@@ -166,6 +168,7 @@ export default async function WatchPage({ params }: Props) {
         </section>
       )}
     </main>
+    </PublicShell>
   );
 }
 

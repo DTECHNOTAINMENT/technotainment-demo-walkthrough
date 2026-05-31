@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { TopupFlow } from "@/components/wallet/TopupFlow";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const metadata: Metadata = {
   title: "top up CAST",
@@ -15,7 +16,8 @@ export default async function TopupPage() {
   if (!session) redirect("/sign-in");
 
   return (
-    <main style={{ maxWidth: 540, margin: "0 auto", padding: "32px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 540, margin: "0 auto", padding: "32px 24px 96px" }}>
       <Link href="/wallet" className="btn btn-glass lower" style={{ padding: "8px 14px", fontSize: 12, marginBottom: 16 }}>
         back to wallet
       </Link>
@@ -24,5 +26,6 @@ export default async function TopupPage() {
       </h1>
       <TopupFlow />
     </main>
+    </PublicShell>
   );
 }

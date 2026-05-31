@@ -9,6 +9,7 @@ import { getCurrentSession } from "@/lib/session";
 import { getReceipt } from "@/lib/money";
 import { formatCast, formatFiat } from "@/lib/cast";
 import { Icon } from "@/components/ui/Icon";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const metadata: Metadata = {
   title: "receipt",
@@ -64,7 +65,8 @@ export default async function ReceiptPage({ params }: Props) {
         ];
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "16px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "16px 24px 96px" }}>
       <Link href="/wallet" className="btn btn-glass lower" style={{ padding: "8px 14px", fontSize: 12, marginBottom: 14 }}>
         <Icon name="chevL" size={14} stroke={2.4} /> back to wallet
       </Link>
@@ -131,6 +133,7 @@ export default async function ReceiptPage({ params }: Props) {
         </div>
       </div>
     </main>
+    </PublicShell>
   );
 }
 

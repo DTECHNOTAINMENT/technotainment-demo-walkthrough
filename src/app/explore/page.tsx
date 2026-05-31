@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { buildMetadata } from "@/lib/seo/meta";
 import { listRecentVideos } from "@/lib/queries/public";
 import { VideoCard } from "@/components/public/cards";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const revalidate = 60;
 
@@ -31,7 +32,8 @@ export default async function ExploreIndexPage() {
   const trending = await listRecentVideos(12).catch(() => []);
 
   return (
-    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 96px" }}>
       <header style={{ marginBottom: 24 }}>
         <div className="lower" style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-3)" }}>
           browse
@@ -93,5 +95,6 @@ export default async function ExploreIndexPage() {
         </section>
       )}
     </main>
+    </PublicShell>
   );
 }

@@ -12,6 +12,7 @@ import { prisma } from "@/lib/db";
 import { fxMethods } from "@/lib/fixtures-wallet";
 import { formatCast } from "@/lib/cast";
 import { Icon } from "@/components/ui/Icon";
+import { PublicShell } from "@/components/app/PublicShell";
 
 /** Saved payment methods — falls back to demo cards with no DB so the wallet never errors. */
 async function savedMethods(userId: string) {
@@ -73,7 +74,8 @@ export default async function WalletPage() {
   }
 
   return (
-    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 24px 96px" }}>
       {/* balance hero */}
       <div className="card" style={{ padding: 0, overflow: "hidden", background: "var(--surface)" }}>
         <div className="brand-hairline" />
@@ -259,5 +261,6 @@ export default async function WalletPage() {
         </div>
       </div>
     </main>
+    </PublicShell>
   );
 }

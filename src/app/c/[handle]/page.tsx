@@ -19,6 +19,7 @@ import { Avatar, formatNum } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
 import { video as videoProvider } from "@/lib/integrations";
 import { formatCast, formatFiat } from "@/lib/cast";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const revalidate = 60;
 
@@ -229,7 +230,8 @@ export default async function ChannelPage({ params }: Props) {
   );
 
   return (
-    <div style={{ paddingBottom: 96 }}>
+    <PublicShell>
+    <main style={{ paddingBottom: 96 }}>
       <JsonLd data={jsonLd} />
 
       {/* HERO */}
@@ -291,7 +293,8 @@ export default async function ChannelPage({ params }: Props) {
           slots={{ live: liveSlot, library: librarySlot, store: storeSlot, members: membersSlot, about: aboutSlot }}
         />
       </div>
-    </div>
+    </main>
+    </PublicShell>
   );
 }
 
