@@ -15,6 +15,7 @@
  * Money is integer CAST (CLAUDE.md §4). Dates are real `Date`s so `publishedAt`/`createdAt`
  * formatting (see components/home/build.ts `ago()`) works without a DB.
  */
+import { catImage } from "@/lib/img";
 
 // ---------------------------------------------------------------------------
 // Light structural types — just the fields the public pages actually read.
@@ -135,7 +136,8 @@ export interface FxCreatorWithChannel extends FxCreator {
 const EPOCH = new Date("2026-01-01T00:00:00.000Z");
 const daysAgo = (n: number): Date => new Date(Date.now() - n * 86_400_000);
 const minsAgo = (n: number): Date => new Date(Date.now() - n * 60_000);
-const pic = (seed: string): string => `https://picsum.photos/seed/${encodeURIComponent(seed)}/640/360`;
+/** Category of a creator by id — used to pick curated, title-representative imagery. */
+const catOf = (cid: string): string => creatorById(cid).category;
 /** channel id convention from prisma/seed.ts: `ch-<creatorId>` */
 const chId = (cid: string): string => `ch-${cid}`;
 
@@ -296,7 +298,7 @@ const VIDEOS: FxVideo[] = VIDEO_SEED.map((v, i) => ({
   slug: v.slug,
   description: `${v.title} — from ${creatorById(v.cid).name}.`,
   metaDescription: `${v.title} on Metascape.`,
-  thumbUrl: pic(v.slug),
+  thumbUrl: catImage(catOf(v.cid), v.slug),
   ogImageUrl: `https://og.technotainment.fm/v/${v.slug}.png`,
   kind: v.kind,
   status: "published",
@@ -324,14 +326,14 @@ const TIERS: FxTier[] = [
 ];
 
 const PRODUCTS: FxProduct[] = [
-  { id: "n1", channelId: chId("nyx"), kind: "drop", name: "field recordings · vol 4", priceCast: 120, edition: "98 / 200", imgUrl: pic("nyx-store-1"), status: "live", sold: 102, stock: 98, createdAt: EPOCH },
-  { id: "n2", channelId: chId("nyx"), kind: "course", name: "intro to modular routing", priceCast: 480, edition: "self-paced", imgUrl: pic("nyx-store-2"), status: "live", sold: 410, stock: null, createdAt: EPOCH },
-  { id: "n5", channelId: chId("nyx"), kind: "drop", name: "buchla session · 192k flac", priceCast: 360, edition: "tier 2+", imgUrl: pic("nyx-store-5"), status: "live", sold: 64, stock: null, createdAt: EPOCH },
-  { id: "p-marlowe-bowl", channelId: chId("marlowe"), kind: "drop", name: "small bowl · kiln drop 048", priceCast: 180, edition: "62 / 150", imgUrl: pic("ceramic-bowl"), status: "live", sold: 88, stock: 62, createdAt: EPOCH },
-  { id: "p-kavi-apron", channelId: chId("kavi"), kind: "merch", name: "kavi's house apron", priceCast: 240, edition: "ships worldwide", imgUrl: pic("chef-apron"), status: "live", sold: 1820, stock: null, createdAt: EPOCH },
-  { id: "p-joon-ink", channelId: chId("joon"), kind: "drop", name: "ink drawing · sat 4-hour", priceCast: 320, edition: "1 of 1", imgUrl: pic("ink-sketch-large"), status: "live", sold: 1, stock: 0, createdAt: EPOCH },
-  { id: "p-ozan-build", channelId: chId("ozan"), kind: "course", name: "live build · cherry sideboard", priceCast: 1240, edition: "vod + sheets", imgUrl: pic("woodworking-tools"), status: "live", sold: 340, stock: null, createdAt: EPOCH },
-  { id: "p-demo-pass", channelId: chId("demo"), kind: "ppv", name: "live show · annual pass", priceCast: 2400, edition: "12 months", imgUrl: pic("microphone-on-air"), status: "live", sold: 5200, stock: null, createdAt: EPOCH },
+  { id: "n1", channelId: chId("nyx"), kind: "drop", name: "field recordings · vol 4", priceCast: 120, edition: "98 / 200", imgUrl: catImage(catOf("nyx"), "n1"), status: "live", sold: 102, stock: 98, createdAt: EPOCH },
+  { id: "n2", channelId: chId("nyx"), kind: "course", name: "intro to modular routing", priceCast: 480, edition: "self-paced", imgUrl: catImage(catOf("nyx"), "n2"), status: "live", sold: 410, stock: null, createdAt: EPOCH },
+  { id: "n5", channelId: chId("nyx"), kind: "drop", name: "buchla session · 192k flac", priceCast: 360, edition: "tier 2+", imgUrl: catImage(catOf("nyx"), "n5"), status: "live", sold: 64, stock: null, createdAt: EPOCH },
+  { id: "p-marlowe-bowl", channelId: chId("marlowe"), kind: "drop", name: "small bowl · kiln drop 048", priceCast: 180, edition: "62 / 150", imgUrl: catImage(catOf("marlowe"), "p-marlowe-bowl"), status: "live", sold: 88, stock: 62, createdAt: EPOCH },
+  { id: "p-kavi-apron", channelId: chId("kavi"), kind: "merch", name: "kavi's house apron", priceCast: 240, edition: "ships worldwide", imgUrl: catImage(catOf("kavi"), "p-kavi-apron"), status: "live", sold: 1820, stock: null, createdAt: EPOCH },
+  { id: "p-joon-ink", channelId: chId("joon"), kind: "drop", name: "ink drawing · sat 4-hour", priceCast: 320, edition: "1 of 1", imgUrl: catImage(catOf("joon"), "p-joon-ink"), status: "live", sold: 1, stock: 0, createdAt: EPOCH },
+  { id: "p-ozan-build", channelId: chId("ozan"), kind: "course", name: "live build · cherry sideboard", priceCast: 1240, edition: "vod + sheets", imgUrl: catImage(catOf("ozan"), "p-ozan-build"), status: "live", sold: 340, stock: null, createdAt: EPOCH },
+  { id: "p-demo-pass", channelId: chId("demo"), kind: "ppv", name: "live show · annual pass", priceCast: 2400, edition: "12 months", imgUrl: catImage(catOf("demo"), "p-demo-pass"), status: "live", sold: 5200, stock: null, createdAt: EPOCH },
 ];
 
 // ---------------------------------------------------------------------------

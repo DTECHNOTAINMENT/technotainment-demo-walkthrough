@@ -11,6 +11,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { formatNum } from "@/components/ui/primitives";
 import { video as videoProvider } from "@/lib/integrations";
+import { catImage } from "@/lib/img";
 import { PublicShell } from "@/components/app/PublicShell";
 import { WatchActions } from "@/components/watch/WatchActions";
 import { WatchDescription } from "@/components/watch/WatchDescription";
@@ -40,7 +41,7 @@ export default async function LiveWatchPage({ params }: Props) {
   if (!stream) notFound();
 
   const creator = stream.channel.creator;
-  const poster = `https://picsum.photos/seed/${encodeURIComponent(`${stream.id}-live`)}/1280/720`;
+  const poster = catImage(creator.category, `${stream.id}-live`, 1280, 720);
 
   const [channel, liveStreams, recent, playback] = await Promise.all([
     getChannelByHandle(creator.handle).catch(() => null),

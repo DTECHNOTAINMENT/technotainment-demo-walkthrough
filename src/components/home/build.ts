@@ -1,13 +1,15 @@
 // Maps DB rows (streams + videos) into HomeView tile/hero shapes. Server-only helpers.
 import type { HomeTile, HeroData } from "@/components/home/HomeView";
-import { picThumb } from "@/components/ui/primitives";
+import { catImage } from "@/lib/img";
+
+type CreatorRow = { name: string; handle: string; brand: string; brand2: string; category?: string | null };
 
 type StreamRow = {
   id: string;
   title: string;
   category: string;
   viewers: number;
-  channel: { handle: string; creator: { name: string; handle: string; brand: string; brand2: string } };
+  channel: { handle: string; creator: CreatorRow };
 };
 
 type VideoRow = {
@@ -17,7 +19,7 @@ type VideoRow = {
   thumbUrl: string | null;
   durationSec: number;
   publishedAt: Date | null;
-  channel: { handle: string; creator: { name: string; handle: string; brand: string; brand2: string } };
+  channel: { handle: string; creator: CreatorRow };
 };
 
 function fmtDuration(sec: number): string {
@@ -43,7 +45,7 @@ export function streamTile(s: StreamRow): HomeTile {
     id: s.id,
     title: s.title,
     href: `/watch/live/${s.id}`,
-    thumb: picThumb(s.id),
+    thumb: catImage(c.category, s.id),
     creator: { name: c.name, handle: c.handle, brand: c.brand, brand2: c.brand2 },
     live: true,
     viewers: s.viewers,
@@ -56,7 +58,7 @@ export function videoTile(v: VideoRow): HomeTile {
     id: v.id,
     title: v.title,
     href: `/watch/${v.slug}`,
-    thumb: v.thumbUrl || picThumb(v.id),
+    thumb: v.thumbUrl || catImage(c.category, v.id),
     creator: { name: c.name, handle: c.handle, brand: c.brand, brand2: c.brand2 },
     live: false,
     dur: v.durationSec ? fmtDuration(v.durationSec) : null,
@@ -71,7 +73,7 @@ export function heroFromStream(s: StreamRow): HeroData {
     sub: `${s.category} · live now`,
     kicker: [s.category],
     href: `/watch/live/${s.id}`,
-    img: picThumb(`${s.id}-hero`),
+    img: catImage(c.category, `${s.id}-hero`, 1280, 520),
     viewers: s.viewers,
     creator: { name: c.name, handle: c.handle, brand: c.brand, brand2: c.brand2 },
   };

@@ -23,6 +23,13 @@ export function VideoPlayer({
     const video = videoRef.current;
     if (!video) return;
 
+    // Progressive MP4 (the demo's real sample films) — play natively, no hls.js needed.
+    const isHls = /\.m3u8(\?|$)/i.test(hlsUrl);
+    if (!isHls) {
+      video.src = hlsUrl;
+      return;
+    }
+
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = hlsUrl;
       return;
@@ -71,6 +78,10 @@ export function VideoPlayer({
         poster={poster}
         controls
         playsInline
+        // Live: autoplay muted + loop so it feels like an ongoing broadcast. VOD: user presses play.
+        autoPlay={live}
+        muted={live}
+        loop={live}
         style={{ width: "100%", height: "100%", display: "block", position: "relative", zIndex: 1 }}
       />
       {live && (

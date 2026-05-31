@@ -8,6 +8,7 @@ import { video } from "@/lib/integrations";
 import { getCurrentSession } from "@/lib/session";
 import { economy } from "@/lib/config";
 import { demoCreatorChannel } from "@/lib/fixtures-studio";
+import { catImage } from "@/lib/img";
 
 export class StudioError extends Error {}
 
@@ -148,7 +149,7 @@ export async function createVideoUpload(input: { channelId: string; title: strin
         channelId: input.channelId,
         title: input.title,
         slug,
-        thumbUrl: `https://picsum.photos/seed/${slug}/640/360`,
+        thumbUrl: catImage(null, slug),
         status: "processing",
         visibility: "public",
       },
@@ -237,7 +238,7 @@ export async function stopStream(streamId: string, channelId: string) {
         channelId,
         title: `${stream.title} (replay)`,
         slug,
-        thumbUrl: `https://picsum.photos/seed/${slug}/640/360`,
+        thumbUrl: catImage(stream.category, slug),
         status: "published",
         visibility: "public",
         publishedAt: new Date(),

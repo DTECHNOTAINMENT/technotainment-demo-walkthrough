@@ -12,6 +12,7 @@ import type { PaymentMethodId } from "@/lib/integrations";
 import { formatCast, formatFiat } from "@/lib/cast";
 import { Icon } from "@/components/ui/Icon";
 import { CARD_METHODS, TOPUP_GROUPS, TOPUP_METHODS, methodById } from "./methods";
+import { PayBrand } from "./PayBrand";
 
 const PRESETS = [500, 1000, 2500, 5000, 10000] as const;
 const MIN_CAST = 100;
@@ -249,6 +250,7 @@ export function TopupFlow() {
                               : "var(--surface)",
                           }}
                         >
+                          <PayBrand id={m.id} />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div className="lower" style={{ fontSize: 13, fontWeight: 700 }}>
                               {m.label}

@@ -2,6 +2,7 @@
 // channel products/tiers) into the plain serialisable prop shapes the watch client
 // components consume. No Prisma types cross the client boundary — only these shapes do.
 // Structural interfaces keep the mappers DB- and fixture-agnostic (and `any`-free).
+import { catImage } from "@/lib/img";
 import type { UpNextItem, WatchDrop, WatchTier, WatchCompetition } from "./types";
 
 interface CreatorRow {
@@ -54,11 +55,6 @@ function hhmmss(sec: number): string {
   return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
-/** picsum seed thumbnail, matching the fixtures' pic() convention (live streams have no image). */
-function pic(seed: string): string {
-  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/336/190`;
-}
-
 /** Build the vertical up-next list: live streams first (with a live badge), then recent VODs. */
 export function buildUpNext(
   streams: StreamRow[],
@@ -71,7 +67,7 @@ export function buildUpNext(
     title: s.title,
     handle: s.channel.creator.handle,
     href: `/watch/live/${s.id}`,
-    thumbUrl: pic(s.id),
+    thumbUrl: catImage(s.channel.creator.category, s.id, 336, 190),
     overlay: s.category.toUpperCase(),
     overlayBg: s.channel.creator.brand,
     live: true,

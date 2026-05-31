@@ -4,25 +4,26 @@
 // edition badge, name, price in CAST, buy button). Additive — the live grid is untouched.
 // The buy action links into the drops/search surface (no checkout wired here).
 import Link from "next/link";
-import { picThumb, formatNum, type CreatorLike } from "@/components/ui/primitives";
+import { formatNum, type CreatorLike } from "@/components/ui/primitives";
+import { catImage } from "@/lib/img";
 
 interface Drop {
   id: string;
   name: string;
   edition: string;
   price: number; // CAST
-  seed: string;
+  category: string;
   handle: string;
   creator: CreatorLike;
 }
 
 const DROPS: Drop[] = [
-  { id: "D1", name: "small bowl · kiln drop 048", edition: "62 / 150", price: 180, seed: "ceramic-bowl", handle: "@marlowe", creator: { name: "Marlowe Reed", handle: "@marlowe", brand: "#f59e0b", brand2: "#ef4444" } },
-  { id: "D2", name: "kavi's house apron", edition: "ships worldwide", price: 240, seed: "chef-apron", handle: "@kavi", creator: { name: "Kavi Anand", handle: "@kavi", brand: "#10b981", brand2: "#22c55e" } },
-  { id: "D3", name: "field recordings · vol 4", edition: "98 / 200", price: 120, seed: "vinyl-record", handle: "@nyx", creator: { name: "Nyx Okafor", handle: "@nyx", brand: "#8b5cf6", brand2: "#ec4899" } },
-  { id: "D4", name: "ink drawing · sat 4-hour", edition: "1 of 1", price: 320, seed: "ink-sketch-large", handle: "@joon", creator: { name: "Joon Park", handle: "@joon", brand: "#06b6d4", brand2: "#3b82f6" } },
-  { id: "D5", name: "rooftop · live mix · 96k flac", edition: "rentable", price: 80, seed: "vinyl-stack", handle: "@kola", creator: { name: "Kola Diallo", handle: "@kola", brand: "#f43f5e", brand2: "#f59e0b" } },
-  { id: "D6", name: "frame-by-frame · tre flip course", edition: "self-paced", price: 480, seed: "skate-park-course", handle: "@ines", creator: { name: "Inés Vidal", handle: "@ines", brand: "#3b82f6", brand2: "#8b5cf6" } },
+  { id: "D1", name: "small bowl · kiln drop 048", edition: "62 / 150", price: 180, category: "ceramics", handle: "@marlowe", creator: { name: "Marlowe Reed", handle: "@marlowe", brand: "#f59e0b", brand2: "#ef4444" } },
+  { id: "D2", name: "kavi's house apron", edition: "ships worldwide", price: 240, category: "live cooking", handle: "@kavi", creator: { name: "Kavi Anand", handle: "@kavi", brand: "#10b981", brand2: "#22c55e" } },
+  { id: "D3", name: "field recordings · vol 4", edition: "98 / 200", price: 120, category: "modular synth", handle: "@nyx", creator: { name: "Nyx Okafor", handle: "@nyx", brand: "#8b5cf6", brand2: "#ec4899" } },
+  { id: "D4", name: "ink drawing · sat 4-hour", edition: "1 of 1", price: 320, category: "illustration", handle: "@joon", creator: { name: "Joon Park", handle: "@joon", brand: "#06b6d4", brand2: "#3b82f6" } },
+  { id: "D5", name: "rooftop · live mix · 96k flac", edition: "rentable", price: 80, category: "afro-fusion dj", handle: "@kola", creator: { name: "Kola Diallo", handle: "@kola", brand: "#f43f5e", brand2: "#f59e0b" } },
+  { id: "D6", name: "frame-by-frame · tre flip course", edition: "self-paced", price: 480, category: "street skate", handle: "@ines", creator: { name: "Inés Vidal", handle: "@ines", brand: "#3b82f6", brand2: "#8b5cf6" } },
 ];
 
 function DropTile({ d }: { d: Drop }) {
@@ -30,7 +31,7 @@ function DropTile({ d }: { d: Drop }) {
   return (
     <div className="tile" style={{ width: 220 }}>
       <Link href={channelHref} style={{ display: "block" }}>
-        <div className="thumb" style={{ aspectRatio: "4 / 5", backgroundImage: `url(${picThumb(d.seed)})` }}>
+        <div className="thumb" style={{ aspectRatio: "4 / 5", backgroundImage: `url(${catImage(d.category, d.id, 480, 600)})` }}>
           <div className="thumb-overlay" />
           <div style={{ position: "absolute", top: 10, left: 10 }}>
             <span

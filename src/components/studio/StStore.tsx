@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import { formatCast, formatFiat } from "@/lib/cast";
 import { Icon } from "@/components/ui/Icon";
 import { Pill, Meter, type PillTone } from "@/components/studio-ui";
+import { catImage } from "@/lib/img";
 
 export interface StoreProduct {
   id: string;
@@ -168,7 +169,7 @@ function NewProductModal({ onClose, onCreate }: { onClose: () => void; onCreate:
       name: name.trim(),
       priceCast: Math.max(0, Math.round(price) || 0),
       edition: edition.trim() || null,
-      imgUrl: `https://picsum.photos/seed/${encodeURIComponent(name.trim())}/640/400`,
+      imgUrl: catImage("modular synth", name.trim(), 640, 400),
       status: "live",
       sold: 0,
       stock: kind === "merch" ? 150 : null,

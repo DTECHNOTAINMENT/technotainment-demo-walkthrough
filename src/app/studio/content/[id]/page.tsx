@@ -10,6 +10,7 @@ import { requireCreatorChannel } from "@/lib/studio";
 import { getStudioVideo } from "@/lib/queries/studio";
 import { appUrl } from "@/lib/seo/meta";
 import { StVideoEditor } from "@/components/studio/StVideoEditor";
+import { catImage } from "@/lib/img";
 
 const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
   published: { bg: "rgba(16,185,129,0.12)", fg: "#10b981" },
@@ -32,8 +33,8 @@ export default async function StudioVideoEditorPage({ params }: { params: { id: 
   const tone = STATUS_TONE[v.status] ?? STATUS_TONE.draft;
 
   // three auto-frame thumbnail options (current + two derived seeds for the picker).
-  const baseThumb = v.thumbUrl ?? `https://picsum.photos/seed/${v.slug}/640/360`;
-  const thumbOptions = [baseThumb, `https://picsum.photos/seed/${v.slug}-2/640/360`, `https://picsum.photos/seed/${v.slug}-3/640/360`];
+  const baseThumb = v.thumbUrl ?? catImage("modular synth", v.slug);
+  const thumbOptions = [baseThumb, catImage("modular synth", `${v.slug}-2`), catImage("modular synth", `${v.slug}-3`)];
   const chapters = (v.chapters ?? []).map((c) => ({ atSec: c.atSec, label: c.label }));
 
   return (
