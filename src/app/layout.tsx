@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ThemeScript } from "@/components/theme";
 import { CookieConsent } from "@/components/CookieConsent";
 import { MobileNav } from "@/components/app/MobileNav";
@@ -7,6 +7,14 @@ import "./globals.css";
 
 // Branding is read from the DB (Admin → control center) at runtime — a rename/recolour needs no
 // deploy. Falls back to the seeded defaults in lib/config when no override is set.
+// Without this, mobile browsers render at a simulated ~980px desktop width — the responsive
+// breakpoints don't engage and the fixed bottom-nav lands off-screen. (Every prototype HTML had it.)
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getBranding();
   return {
