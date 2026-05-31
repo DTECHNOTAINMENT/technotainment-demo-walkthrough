@@ -80,7 +80,7 @@ export default async function StudioEarningsPage() {
         <SxStat label="paid out" value={formatCast(summary.paidCast)} unit="CAST" sub={formatFiat(summary.paidCast)} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,2fr) minmax(280px,1fr)", gap: 16, alignItems: "start" }}>
+      <div className="split-2" style={{ alignItems: "start", ["--split-2-cols" as string]: "minmax(0,2fr) minmax(280px,1fr)" }}>
         {/* left — payout history */}
         <SxCard title="payout history" sub="withdrawals to your linked account" pad={false}>
           {payouts.length === 0 ? (
@@ -88,7 +88,8 @@ export default async function StudioEarningsPage() {
               <SxEmpty title="no payouts yet" hint="withdraw your available CAST to see it here." />
             </div>
           ) : (
-            <>
+            <div className="tbl-scroll">
+              <div style={{ minWidth: 460 }}>
               <Row head>
                 <span>reference · date</span>
                 <span style={{ textAlign: "right" }}>CAST</span>
@@ -117,7 +118,8 @@ export default async function StudioEarningsPage() {
                   </div>
                 </Row>
               ))}
-            </>
+              </div>
+            </div>
           )}
         </SxCard>
 

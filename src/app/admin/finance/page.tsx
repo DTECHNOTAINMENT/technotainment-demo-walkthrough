@@ -158,7 +158,8 @@ export default async function AdminFinancePage() {
               no transactions yet.
             </div>
           ) : (
-            <>
+            <div className="tbl-scroll">
+              <div style={{ minWidth: 640 }}>
               <div className="st-row head" style={{ gridTemplateColumns: TXN_COLS }}>
                 <span>id</span>
                 <span>user · type</span>
@@ -215,7 +216,8 @@ export default async function AdminFinancePage() {
                   </div>
                 );
               })}
-            </>
+              </div>
+            </div>
           )}
         </StudioCard>
 

@@ -11,6 +11,7 @@ import Link from "next/link";
 import { requireCreatorChannel } from "@/lib/studio";
 import { ThemeToggle } from "@/components/theme";
 import { StSidebar } from "@/components/studio/StSidebar";
+import { StMobileNav } from "@/components/studio/StMobileNav";
 
 export const metadata: Metadata = {
   title: "creator studio",
@@ -64,6 +65,8 @@ export default async function StudioLayout({ children }: { children: ReactNode }
             backdropFilter: "blur(8px)",
           }}
         >
+          <StMobileNav />
+
           <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25, minWidth: 0 }}>
             <span
               style={{
@@ -88,7 +91,7 @@ export default async function StudioLayout({ children }: { children: ReactNode }
 
           <Link
             href={channelHref}
-            className="btn btn-glass lower"
+            className="btn btn-glass lower sb-hide-mobile"
             style={{ padding: "9px 14px", fontSize: 13, textDecoration: "none" }}
           >
             view channel

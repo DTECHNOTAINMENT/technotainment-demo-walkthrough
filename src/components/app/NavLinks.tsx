@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 export interface NavItem {
   href: string;
   label: string;
+  /** optional icon name (see @/components/ui/Icon) — used by the mobile bottom-nav. */
+  icon?: string;
 }
 
 /**

@@ -5,7 +5,17 @@ import { prisma } from "@/lib/db";
 import { listFollowing } from "@/lib/queries/viewer";
 import { Sidebar, type SidebarCreator } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
+import { BottomNav } from "@/components/app/BottomNav";
+import type { NavItem } from "@/components/app/NavLinks";
 import type { CreatorLike } from "@/components/ui/primitives";
+
+const MOBILE_NAV: NavItem[] = [
+  { href: "/home", label: "home", icon: "home" },
+  { href: "/live", label: "live", icon: "flame" },
+  { href: "/library", label: "library", icon: "bookmark" },
+  { href: "/wallet", label: "wallet", icon: "wallet" },
+  { href: "/profile", label: "profile", icon: "user" },
+];
 
 async function getFollowing(userId: string): Promise<SidebarCreator[]> {
   try {
@@ -60,6 +70,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Topbar balance={balance} user={user} />
         <main>{children}</main>
       </div>
+      <BottomNav items={MOBILE_NAV} />
     </div>
   );
 }

@@ -606,6 +606,42 @@ h1, h2, h3, p { text-wrap: pretty; }
 }
 @keyframes drawerIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 
+/* Mobile hamburger trigger (studio/admin) — visible only below 1024px */
+.sb-mobile-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; flex: 0 0 44px;
+  margin-left: -6px;
+  border-radius: 10px;
+  color: var(--ink-2);
+  background: transparent;
+}
+.sb-mobile-btn:hover { background: var(--surface-2); color: var(--ink-1); }
+@media (min-width: 1024px) { .sb-mobile-btn { display: none; } }
+
+/* Utility: hide an element on phones, show from 1024px up */
+.sb-hide-mobile { display: none; }
+@media (min-width: 1024px) { .sb-hide-mobile { display: inline-flex; } }
+
+/* ---------- Responsive table / grid helpers ---------- */
+/* Wrap dense fixed-px row grids so they scroll horizontally inside their card
+   instead of overflowing the viewport on narrow screens. */
+.tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* 2-up split (e.g. content + sidebar): single column on phones, two from 900px up. */
+.split-2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 900px) { .split-2 { grid-template-columns: var(--split-2-cols, minmax(0, 2fr) 280px); } }
+
+/* Topbar row: allow controls to wrap rather than overflow at 360px. */
+@media (max-width: 560px) {
+  .topbar-row { flex-wrap: wrap; row-gap: 8px; padding: 8px 12px !important; }
+}
+
+/* Modals/drawers full-width on small screens. */
+@media (max-width: 520px) {
+  .modal { max-width: 100%; }
+  .sb-drawer { width: min(86vw, 320px); }
+}
+
 /* Grid utility for home (YouTube-style) */
 .grid-tiles {
   display: grid;

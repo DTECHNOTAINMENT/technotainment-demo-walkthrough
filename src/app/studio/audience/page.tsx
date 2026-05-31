@@ -50,7 +50,8 @@ export default async function StudioAudiencePage() {
                 </p>
               </div>
             ) : (
-              <>
+              <div className="tbl-scroll">
+                <div style={{ minWidth: 420 }}>
                 <div className="st-row head" style={{ gridTemplateColumns: ROW }}>
                   <span>member</span>
                   <span>tier</span>
@@ -93,7 +94,8 @@ export default async function StudioAudiencePage() {
                     </div>
                   </div>
                 ))}
-              </>
+                </div>
+              </div>
             )}
           </StudioCard>
         </div>
