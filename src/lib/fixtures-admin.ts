@@ -42,6 +42,10 @@ export const DEMO_REPORTS = [
 ];
 
 export const DEMO_ADMIN_TRANSACTIONS = [
+  // TXN-2001 (a top-up, +cast) and TXN-2002 (a −800 spend) are referenced by the refund tests:
+  // a top-up can't be refunded, a spend can. Keep both ids stable.
+  { id: "TXN-2001", userId: "U-48210", channelId: null, kind: "topup", grossFiat: "£40.00", cast: 4000, method: "visa", status: "settled", flag: null, createdAt: ago(2) },
+  { id: "TXN-2002", userId: "U-48210", channelId: "ch-nyx", kind: "membership", grossFiat: null, cast: -800, method: "balance", status: "settled", flag: null, createdAt: ago(3) },
   { id: "TXR-9F2A", userId: "U-48210", channelId: "ch-nyx", kind: "membership", grossFiat: null, cast: -800, method: "balance", status: "settled", flag: null, createdAt: ago(2) },
   { id: "TXR-9F2B", userId: "U-48210", channelId: null, kind: "topup", grossFiat: "£50.00", cast: 5000, method: "apple-pay", status: "settled", flag: null, createdAt: ago(3) },
   { id: "TXR-9F2C", userId: "U-JOON", channelId: "ch-atlas", kind: "ppv", grossFiat: null, cast: -300, method: "balance", status: "settled", flag: null, createdAt: ago(5) },

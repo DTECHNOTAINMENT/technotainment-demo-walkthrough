@@ -1,4 +1,4 @@
-import "server-only";
+// (plain demo data — safe to import from server or test contexts; no "server-only")
 import { fxChannelByHandle } from "@/lib/fixtures";
 import type { EarningsSummary } from "@/lib/earnings";
 
