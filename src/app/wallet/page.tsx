@@ -9,8 +9,19 @@ import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { balanceOf, listHistory } from "@/lib/money";
 import { prisma } from "@/lib/db";
+import { fxMethods } from "@/lib/fixtures-wallet";
 import { formatCast } from "@/lib/cast";
 import { Icon } from "@/components/ui/Icon";
+
+/** Saved payment methods — falls back to demo cards with no DB so the wallet never errors. */
+async function savedMethods(userId: string) {
+  try {
+    const rows = await prisma.paymentMethod.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
+    return rows.length ? rows : (fxMethods() as unknown as typeof rows);
+  } catch {
+    return fxMethods() as unknown as Awaited<ReturnType<typeof prisma.paymentMethod.findMany>>;
+  }
+}
 
 export const metadata: Metadata = {
   title: "wallet",
@@ -49,7 +60,7 @@ export default async function WalletPage() {
   const [balance, history, methods] = await Promise.all([
     balanceOf(session.userId),
     listHistory(session.userId),
-    prisma.paymentMethod.findMany({ where: { userId: session.userId }, orderBy: { createdAt: "asc" } }),
+    savedMethods(session.userId),
   ]);
 
   // group history by day for the spend-history look

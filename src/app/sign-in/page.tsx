@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
+import { DEMO_USERS } from "@/lib/fixtures";
 import { DevSignIn, type DevUserOption } from "@/components/app/DevSignIn";
 
 export const metadata: Metadata = { title: "sign in", robots: { index: false } };
+export const dynamic = "force-dynamic";
+
+const DEMO_OPTIONS: DevUserOption[] = DEMO_USERS.map((u) => ({
+  id: u.userId,
+  handle: u.handle,
+  displayName: u.displayName,
+  role: u.role,
+  avatarUrl: null,
+}));
 
 type Role = "member" | "creator" | "staff";
 
@@ -18,19 +28,21 @@ export default async function SignInPage({
   const nextParam = searchParams.next;
   const next = nextParam && nextParam.startsWith("/") ? nextParam : "/home";
 
-  const dbUsers = await prisma.user.findMany({
-    orderBy: { role: "desc" },
-    take: 12,
-    select: { id: true, handle: true, displayName: true, role: true, avatarUrl: true },
-  });
-
-  const users: DevUserOption[] = dbUsers.map((u) => ({
-    id: u.id,
-    handle: u.handle,
-    displayName: u.displayName,
-    role: toRole(u.role),
-    avatarUrl: u.avatarUrl,
-  }));
+  // No-DB demo fallback: if the database isn't reachable or empty, offer the built-in demo
+  // accounts so this screen never errors and the walkthrough works with zero backend.
+  let users: DevUserOption[];
+  try {
+    const dbUsers = await prisma.user.findMany({
+      orderBy: { role: "desc" },
+      take: 12,
+      select: { id: true, handle: true, displayName: true, role: true, avatarUrl: true },
+    });
+    users = dbUsers.length
+      ? dbUsers.map((u) => ({ id: u.id, handle: u.handle, displayName: u.displayName, role: toRole(u.role), avatarUrl: u.avatarUrl }))
+      : DEMO_OPTIONS;
+  } catch {
+    users = DEMO_OPTIONS;
+  }
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 18px" }}>

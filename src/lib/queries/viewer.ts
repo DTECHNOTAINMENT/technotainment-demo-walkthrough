@@ -73,22 +73,43 @@ function homeFeedDb() {
 
 /** Library: active memberships + purchased PPV/drops, derived from settled transactions. */
 export async function library(userId: string) {
-  const [memberships, purchases] = await Promise.all([
-    prisma.membership.findMany({
-      where: { userId, status: "active" },
-      include: { tier: true, channel: { include: { creator: true } } },
-    }),
-    prisma.transaction.findMany({
-      where: { userId, kind: { in: ["ppv", "drop"] }, status: "settled" },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
-  return { memberships, purchases };
+  try {
+    const [memberships, purchases] = await Promise.all([
+      prisma.membership.findMany({
+        where: { userId, status: "active" },
+        include: { tier: true, channel: { include: { creator: true } } },
+      }),
+      prisma.transaction.findMany({
+        where: { userId, kind: { in: ["ppv", "drop"] }, status: "settled" },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+    return { memberships, purchases };
+  } catch {
+    // No-DB demo: empty library is a valid, non-erroring state (the page shows an empty state).
+    return { memberships: [], purchases: [] } as {
+      memberships: Awaited<ReturnType<typeof libraryMembershipsDb>>;
+      purchases: Awaited<ReturnType<typeof libraryPurchasesDb>>;
+    };
+  }
+}
+
+function libraryMembershipsDb() {
+  return prisma.membership.findMany({ include: { tier: true, channel: { include: { creator: true } } } });
+}
+function libraryPurchasesDb() {
+  return prisma.transaction.findMany({});
 }
 
 export async function consentFor(userId: string) {
-  return prisma.consentGrant.findMany({
-    where: { userId },
-    include: { creator: true },
-  });
+  try {
+    return await prisma.consentGrant.findMany({ where: { userId }, include: { creator: true } });
+  } catch {
+    // No-DB demo: no consent grants yet — the profile page renders its default toggles.
+    return [] as Awaited<ReturnType<typeof consentForDb>>;
+  }
+}
+
+function consentForDb() {
+  return prisma.consentGrant.findMany({ include: { creator: true } });
 }

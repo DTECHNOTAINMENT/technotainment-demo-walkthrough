@@ -457,3 +457,37 @@ export function fxSitemapClips(): { slug: string; publishedAt: Date; createdAt: 
 export function fxSitemapCategories(): string[] {
   return Array.from(new Set(CREATORS.map((c) => c.category)));
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// DEMO MODE identities (no-DB). The demo runs end-to-end with no database:
+// sign-in accepts these, authed pages read fixtures, writes simulate success.
+// ─────────────────────────────────────────────────────────────────────────
+export interface DemoSession {
+  userId: string;
+  handle: string;
+  displayName: string;
+  email: string;
+  role: "member" | "creator" | "staff";
+}
+
+export const DEMO_USERS: DemoSession[] = [
+  { userId: "U-48210", handle: "@mira.k", displayName: "Mira K", email: "mira@demo.tv", role: "member" },
+  { userId: "U-NYX", handle: "@nyxsynth", displayName: "Nyx Okafor", email: "nyx@demo.tv", role: "creator" },
+];
+
+export const DEMO_ADMINS = [
+  { id: "A-OWNER", name: "Operator", email: "ops@technotainment.fm", role: "owner", mfa: true },
+  { id: "A-TRUST", name: "Trust & Safety", email: "trust@technotainment.fm", role: "trust_safety", mfa: true },
+  { id: "A-FINANCE", name: "Finance", email: "finance@technotainment.fm", role: "finance", mfa: true },
+];
+
+export const DEMO_BALANCE = 12480; // @mira.k demo wallet balance (matches the seed)
+
+export function demoSessionFor(userId: string): DemoSession | null {
+  return DEMO_USERS.find((u) => u.userId === userId) ?? null;
+}
+
+export function demoAdminSessionFor(adminUserId: string): DemoSession | null {
+  const a = DEMO_ADMINS.find((x) => x.id === adminUserId);
+  return a ? { userId: a.id, handle: a.email, displayName: a.name, email: a.email, role: "staff" } : null;
+}

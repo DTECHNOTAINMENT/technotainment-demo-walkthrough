@@ -24,8 +24,13 @@ export interface ConnectorConfig {
 const KEY = (id: string) => `connector:${id}`;
 
 export async function getConnectorConfig(id: string): Promise<ConnectorConfig | null> {
-  const row = await prisma.setting.findUnique({ where: { key: KEY(id) } });
-  return row ? (row.valueJson as unknown as ConnectorConfig) : null;
+  try {
+    const row = await prisma.setting.findUnique({ where: { key: KEY(id) } });
+    return row ? (row.valueJson as unknown as ConnectorConfig) : null;
+  } catch {
+    // No DB (demo mode) → no stored config; connector reads as mock (its env fallback still applies).
+    return null;
+  }
 }
 
 export async function getConnectorCredentials(id: string): Promise<Record<string, string>> {

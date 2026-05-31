@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentSession } from "@/lib/session";
 import { branding } from "@/lib/config";
+import { DEMO_ADMINS } from "@/lib/fixtures";
 import { AxSignin } from "@/components/admin-x/AxSignin";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +19,16 @@ export default async function AdminSignInPage() {
   const session = await getCurrentSession();
   if (session?.role === "staff") redirect("/admin");
 
-  const team = await prisma.adminUser.findMany({ orderBy: { role: "asc" } });
-  const staff = team.map((m) => ({ id: m.id, name: m.name, email: m.email, role: m.role, mfa: m.mfa }));
+  // No-DB demo fallback: list the built-in demo staff so this screen never errors.
+  let staff: { id: string; name: string; email: string; role: string; mfa: boolean }[];
+  try {
+    const team = await prisma.adminUser.findMany({ orderBy: { role: "asc" } });
+    staff = team.length
+      ? team.map((m) => ({ id: m.id, name: m.name, email: m.email, role: m.role, mfa: m.mfa }))
+      : DEMO_ADMINS.map((a) => ({ id: a.id, name: a.name, email: a.email, role: a.role, mfa: a.mfa }));
+  } catch {
+    staff = DEMO_ADMINS.map((a) => ({ id: a.id, name: a.name, email: a.email, role: a.role, mfa: a.mfa }));
+  }
 
   return (
     <div
