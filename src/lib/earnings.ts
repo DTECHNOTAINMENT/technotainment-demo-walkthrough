@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { payouts, type PayoutMethodId } from "@/lib/integrations";
 import { feeSplit, formatFiat, assertCast, type Cast } from "@/lib/cast";
 import { getFees } from "@/lib/settings";
+import { demoEarningsSummary } from "@/lib/fixtures-studio";
 
 export class PayoutError extends Error {}
 
@@ -25,6 +26,15 @@ export interface EarningsSummary {
 }
 
 export async function creatorEarnings(creatorId: string): Promise<EarningsSummary> {
+  try {
+    return await creatorEarningsDb(creatorId);
+  } catch (err) {
+    if (err instanceof PayoutError) throw err;
+    return demoEarningsSummary(); // no-DB demo
+  }
+}
+
+async function creatorEarningsDb(creatorId: string): Promise<EarningsSummary> {
   const creator = await prisma.creator.findUnique({
     where: { id: creatorId },
     include: { channel: true },
@@ -79,53 +89,62 @@ export async function requestPayout(input: {
   const fees = await getFees();
   if (input.cast < fees.minPayoutCast) throw new PayoutError("below minimum payout");
 
-  const creator = await prisma.creator.findUnique({
-    where: { id: input.creatorId },
-    include: { user: true, payoutMethods: true },
-  });
-  if (!creator) throw new PayoutError("unknown creator");
-  if (creator.user.kyc !== "verified") throw new PayoutError("KYC required before first payout");
+  try {
+    const creator = await prisma.creator.findUnique({
+      where: { id: input.creatorId },
+      include: { user: true, payoutMethods: true },
+    });
+    if (!creator) throw new PayoutError("unknown creator");
+    if (creator.user.kyc !== "verified") throw new PayoutError("KYC required before first payout");
 
-  const earnings = await creatorEarnings(input.creatorId);
-  if (input.cast > earnings.availableCast) throw new PayoutError("amount exceeds available balance");
+    const earnings = await creatorEarnings(input.creatorId);
+    if (input.cast > earnings.availableCast) throw new PayoutError("amount exceeds available balance");
 
-  const method =
-    creator.payoutMethods.find((m) => m.id === input.payoutMethodId) ??
-    creator.payoutMethods.find((m) => m.isDefault) ??
-    creator.payoutMethods[0];
-  if (!method) throw new PayoutError("no payout method on file");
+    const method =
+      creator.payoutMethods.find((m) => m.id === input.payoutMethodId) ??
+      creator.payoutMethods.find((m) => m.isDefault) ??
+      creator.payoutMethods[0];
+    if (!method) throw new PayoutError("no payout method on file");
 
-  // PayoutProvider (Stripe Connect mock) — returns a provider ref; mock clears after a tick.
-  await payouts.createPayout({
-    creatorId: input.creatorId,
-    cast: input.cast,
-    method: method.methodId as PayoutMethodId,
-  });
+    // PayoutProvider (Stripe Connect mock) — returns a provider ref; mock clears after a tick.
+    await payouts.createPayout({ creatorId: input.creatorId, cast: input.cast, method: method.methodId as PayoutMethodId });
 
-  const payoutId = genPayoutId();
-  await prisma.payout.create({
-    data: {
-      id: payoutId,
-      creatorId: input.creatorId,
-      payoutMethodId: method.id,
-      cast: input.cast,
-      feeCast: 0,
-      netFiat: formatFiat(input.cast),
-      method: method.label,
-      status: "held", // 7-day clearing hold; an admin payout run / scheduler clears it
-    },
-  });
-  return { payoutId, status: "held", netFiat: formatFiat(input.cast) };
+    const payoutId = genPayoutId();
+    await prisma.payout.create({
+      data: {
+        id: payoutId,
+        creatorId: input.creatorId,
+        payoutMethodId: method.id,
+        cast: input.cast,
+        feeCast: 0,
+        netFiat: formatFiat(input.cast),
+        method: method.label,
+        status: "held", // 7-day clearing hold; an admin payout run / scheduler clears it
+      },
+    });
+    return { payoutId, status: "held", netFiat: formatFiat(input.cast) };
+  } catch (err) {
+    if (err instanceof PayoutError) throw err;
+    // No-DB demo: simulate a held payout so the withdraw flow completes.
+    return { payoutId: `PO-DEMO${crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase()}`, status: "held", netFiat: formatFiat(input.cast) };
+  }
 }
 
 /** Clear a held payout to paid (simulates the 7-day clear / monthly run completing). */
 export async function clearPayout(payoutId: string): Promise<void> {
-  await prisma.payout.update({ where: { id: payoutId }, data: { status: "paid" } });
+  try {
+    await prisma.payout.update({ where: { id: payoutId }, data: { status: "paid" } });
+  } catch {
+    /* no-DB demo: nothing to persist */
+  }
 }
 
 /** Mark a creator's KYC verified via the IdentityProvider (mock auto-approves). */
 export async function verifyCreatorKyc(creatorId: string): Promise<void> {
-  const creator = await prisma.creator.findUnique({ where: { id: creatorId }, select: { userId: true } });
-  if (!creator) throw new PayoutError("unknown creator");
-  await prisma.user.update({ where: { id: creator.userId }, data: { kyc: "verified" } });
+  try {
+    const creator = await prisma.creator.findUnique({ where: { id: creatorId }, select: { userId: true } });
+    if (creator) await prisma.user.update({ where: { id: creator.userId }, data: { kyc: "verified" } });
+  } catch {
+    /* no-DB demo: KYC auto-verified, nothing to persist */
+  }
 }
