@@ -10,6 +10,7 @@ import { broadcastEvent } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { PageHeader } from "@/components/viewer/shared";
 import { Avatar, formatNum } from "@/components/ui/primitives";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,8 @@ export default async function LivePage() {
   );
 
   return (
-    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 96px" }}>
       {jsonLd.length > 0 && <JsonLd data={jsonLd} />}
       <PageHeader eyebrow="streaming right now" title="live now" sub={`${streams.length} ${streams.length === 1 ? "creator" : "creators"} live across the platform.`} />
 
@@ -78,5 +80,6 @@ export default async function LivePage() {
         <p className="lower" style={{ color: "var(--ink-3)" }}>nobody&apos;s live right now — check back soon.</p>
       )}
     </main>
+    </PublicShell>
   );
 }

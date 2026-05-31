@@ -10,6 +10,7 @@ import { breadcrumb } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { VideoCard } from "@/components/public/cards";
 import { PageHeader } from "@/components/viewer/shared";
+import { PublicShell } from "@/components/app/PublicShell";
 
 export const revalidate = 60;
 
@@ -37,7 +38,8 @@ export default async function ExplorePage({ params }: Props) {
   ]);
 
   return (
-    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 96px" }}>
+    <PublicShell>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 96px" }}>
       <JsonLd data={jsonLd} />
       <PageHeader eyebrow="explore" title={category} sub={`live streams, videos and drops in ${category}.`} />
 
@@ -59,5 +61,6 @@ export default async function ExplorePage({ params }: Props) {
         <p className="lower" style={{ color: "var(--ink-3)" }}>nothing here yet — check back soon.</p>
       )}
     </main>
+    </PublicShell>
   );
 }
