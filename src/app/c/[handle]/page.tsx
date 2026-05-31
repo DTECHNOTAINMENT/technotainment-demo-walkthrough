@@ -11,16 +11,13 @@ import { buildMetadata, clampDescription } from "@/lib/seo/meta";
 import { person, breadcrumb, product } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { VideoCard } from "@/components/public/cards";
-import { VideoPlayer } from "@/components/VideoPlayer";
 import { SupportBar } from "@/components/SupportBar";
-import { LiveChat } from "@/components/LiveChat";
 import { ChannelTabs } from "@/components/viewer/ChannelTabs";
 import { ChannelActions } from "@/components/viewer/ChannelActions";
 import { ChannelStore } from "@/components/viewer/ChannelStore";
 import { ChannelSubscribeButton } from "@/components/viewer/ChannelSubscribeButton";
-import { Avatar, formatNum } from "@/components/ui/primitives";
+import { Avatar, Thumb, LiveBadge, ViewerBadge, formatNum } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
-import { video as videoProvider } from "@/lib/integrations";
 import { formatCast } from "@/lib/cast";
 import { PublicShell } from "@/components/app/PublicShell";
 
@@ -58,10 +55,8 @@ export default async function ChannelPage({ params }: Props) {
   const live = channel.streams[0];
   const c = channel.creator;
   const banner = `https://picsum.photos/seed/${encodeURIComponent(`${c.id}-banner-${c.brand}`)}/1600/600`;
-  // Live playback (mock test stream in demo; real Mux when configured) + a poster so the player
-  // always shows a frame instead of a black box.
-  const livePlayback = live ? await videoProvider.getPlayback(live.id) : null;
-  const livePoster = live ? `https://picsum.photos/seed/${encodeURIComponent(`${live.id}-live`)}/1280/720` : "";
+  // Poster for the live tile thumbnail (the rich player itself lives on /watch/live/:id).
+  const livePoster = live ? `https://picsum.photos/seed/${encodeURIComponent(`${live.id}-live`)}/640/360` : "";
 
   const jsonLd = [
     person(channel.creator),
@@ -112,62 +107,70 @@ export default async function ChannelPage({ params }: Props) {
     { title: "studio tour · 2026 edition", when: "wed 17:00", reminders: 54 },
   ];
 
-  const scheduleList = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-3)" }}>
-        upcoming
-      </div>
-      {schedule.map((s) => (
-        <div
-          key={s.title}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "12px 14px",
-            border: "1px solid var(--hairline)",
-            borderRadius: 12,
-            background: "var(--surface)",
-          }}
-        >
-          <Icon name="clock" size={16} stroke={2.2} style={{ color: "var(--ink-3)", flex: "0 0 16px" }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{s.title}</div>
-            <div className="lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>{s.when}</div>
-          </div>
-          <span className="lower tnum" style={{ fontSize: 12, color: "var(--ink-3)", display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="bell" size={13} stroke={2.2} /> {formatNum(s.reminders)}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-
+  // The "live & upcoming" tab is a horizontal rail of tiles (prototype/v4/microcast.jsx →
+  // tab === "live": <Tile .../> rows in a `.rail`). The live tile links through to the rich
+  // live-watch page (/watch/live/:id); upcoming tiles carry a clock "in {when}" badge.
   const liveSlot = (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {live ? (
-        // Player + chat side-by-side on desktop, stacked on mobile (.split-2).
-        <div className="split-2" style={{ ["--split-2-cols" as string]: "minmax(0,1fr) 340px" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {livePlayback && <VideoPlayer hlsUrl={livePlayback.hlsUrl} poster={livePoster} live />}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span className="live-pill">live</span>
-              <span style={{ fontWeight: 700, fontSize: 16 }}>{live.title}</span>
-              <span className="tnum lower" style={{ color: "var(--ink-3)", fontSize: 13 }}>
-                {formatNum(live.viewers)} watching
-              </span>
+      <div className="rail">
+        {live && (
+          <Link
+            href={`/watch/live/${live.id}`}
+            className="tile"
+            style={{ width: 320, cursor: "pointer", textDecoration: "none", display: "block" }}
+          >
+            <Thumb src={livePoster}>
+              <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, alignItems: "center" }}>
+                <LiveBadge />
+                <ViewerBadge n={live.viewers} />
+              </div>
+              <div style={{ position: "absolute", left: 10, bottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ padding: 2, borderRadius: "50%", background: `linear-gradient(135deg, ${c.brand}, ${c.brand2})` }}>
+                  <Avatar creator={c} size={26} />
+                </span>
+              </div>
+            </Thumb>
+            <div style={{ display: "flex", gap: 10, padding: "10px 2px", alignItems: "flex-start" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.3, color: "var(--ink-1)", display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2, overflow: "hidden" }}>
+                  {live.title}
+                </div>
+                <div className="lower" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span>{handle}</span>
+                  <span>· <span className="tnum">{formatNum(live.viewers)}</span> watching</span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        )}
+        {schedule.map((s, i) => (
+          <div key={s.title} className="tile" style={{ width: 320 }}>
+            <Thumb src={`https://picsum.photos/seed/${encodeURIComponent(`${c.id}-up${i + 1}`)}/640/360`}>
+              <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, alignItems: "center" }}>
+                <span className="tnum" style={{ background: "rgba(0,0,0,0.65)", color: "white", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, backdropFilter: "blur(6px)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <Icon name="clock" size={11} stroke={2.4} /> in {s.when}
+                </span>
+              </div>
+              <div style={{ position: "absolute", left: 10, bottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ padding: 2, borderRadius: "50%", background: `linear-gradient(135deg, ${c.brand}, ${c.brand2})` }}>
+                  <Avatar creator={c} size={26} />
+                </span>
+              </div>
+            </Thumb>
+            <div style={{ display: "flex", gap: 10, padding: "10px 2px", alignItems: "flex-start" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.3, color: "var(--ink-1)", display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2, overflow: "hidden" }}>
+                  {s.title}
+                </div>
+                <div className="lower" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span>{handle}</span>
+                  <span>· <Icon name="bell" size={12} stroke={2.2} style={{ verticalAlign: -1 }} /> <span className="tnum">{formatNum(s.reminders)}</span></span>
+                </div>
+              </div>
             </div>
           </div>
-          <div style={{ height: 420 }}>
-            <LiveChat streamId={live.id} />
-          </div>
-        </div>
-      ) : (
-        <p className="lower" style={{ color: "var(--ink-3)" }}>
-          not live right now — set a reminder for an upcoming session below, or catch the library.
-        </p>
-      )}
-      {scheduleList}
+        ))}
+      </div>
     </div>
   );
 
