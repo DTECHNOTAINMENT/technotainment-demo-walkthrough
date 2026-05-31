@@ -722,7 +722,14 @@ h1, h2, h3, p { text-wrap: pretty; }
   aspect-ratio: 21/9;
   background-size: cover; background-position: center;
 }
-@media (max-width: 768px) { .marquee { aspect-ratio: 16/10; } }
+/* Hero overlay: bottom-aligned over the image on desktop … */
+.marquee-inner { position: absolute; inset: 0; }
+@media (max-width: 768px) {
+  /* … but on mobile the title wraps and the actions stack, so let the card GROW to fit its
+     content (in-flow overlay + min-height) instead of clipping the eyebrow off the top. */
+  .marquee { aspect-ratio: auto; min-height: 62vw; }
+  .marquee-inner { position: relative; inset: auto; min-height: 62vw; }
+}
 .marquee::after {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(90deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0) 70%),

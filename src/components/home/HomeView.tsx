@@ -98,9 +98,8 @@ function Hero({ hero }: { hero: HeroData }) {
   return (
     <div className="marquee" style={{ backgroundImage: `url(${hero.img})`, position: "relative", zIndex: 1 }}>
       <div
+        className="marquee-inner"
         style={{
-          position: "absolute",
-          inset: 0,
           zIndex: 2,
           padding: "clamp(20px, 3.6vw, 40px)",
           display: "flex",
