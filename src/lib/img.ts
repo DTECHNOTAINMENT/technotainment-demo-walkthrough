@@ -68,3 +68,11 @@ export function catImage(
   const lock = lockOf(seedKey || key || tags);
   return `https://loremflickr.com/${w}/${h}/${encodeURIComponent(tags)}?lock=${lock}`;
 }
+
+/**
+ * A guaranteed-loading image for the same seed (Picsum is extremely reliable). Used as the
+ * fallback behind <SmartImg> so a thumbnail never stays blank if the curated CDN is slow/down.
+ */
+export function reliableImage(seedKey: string, w = 640, h = 360): string {
+  return `https://picsum.photos/seed/${encodeURIComponent(`tn-${seedKey}`)}/${w}/${h}`;
+}

@@ -1,6 +1,8 @@
 // Public discovery UI primitives — server components, design tokens only.
 import Link from "next/link";
 import { formatCast } from "@/lib/cast";
+import { reliableImage } from "@/lib/img";
+import { SmartImg } from "@/components/ui/SmartImg";
 
 function duration(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -26,10 +28,8 @@ export function VideoCard({
   const href = video.kind === "clip" ? `/clip/${video.slug}` : `/watch/${video.slug}`;
   return (
     <Link href={href} className="tile gtile" style={{ display: "block" }}>
-      <div
-        className="thumb"
-        style={{ backgroundImage: `url(${video.thumbUrl})`, position: "relative" }}
-      >
+      <div className="thumb" style={{ position: "relative" }}>
+        <SmartImg src={video.thumbUrl} fallback={reliableImage(video.slug)} />
         <span
           className="tnum"
           style={{
