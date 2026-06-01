@@ -18,6 +18,8 @@ import {
   fxRecentVideos,
   fxTopCreators,
   fxChannelByHandle,
+  fxChannelByCreatorId,
+  fxStreamProducts,
   fxVideoBySlug,
   fxClipBySlug,
   fxExplore,
@@ -39,6 +41,31 @@ export async function getChannelByHandle(handle: string) {
   } catch {
     return (fxChannelByHandle(handle) as unknown as DbRow) ?? null;
   }
+}
+
+/** Resolve a channel by its CREATOR id — powers the legacy /c/<id> → /c/<handle> redirect. */
+export async function getChannelByCreatorId(creatorId: string) {
+  type DbRow = Awaited<ReturnType<typeof getChannelByHandleDb>>;
+  try {
+    const row = await prisma.channel.findFirst({
+      where: { creator: { id: creatorId } },
+      include: {
+        creator: true,
+        tiers: { orderBy: { priceCast: "asc" } },
+        products: { where: { status: "live" }, orderBy: { createdAt: "desc" } },
+        videos: {
+          where: { status: "published", visibility: "public" },
+          orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+          take: 24,
+        },
+        streams: { where: { status: "live" }, take: 1 },
+      },
+    });
+    if (row) return row;
+  } catch {
+    /* fall through to fixtures */
+  }
+  return (fxChannelByCreatorId(creatorId) as unknown as DbRow) ?? null;
 }
 
 function getChannelByHandleDb(handle: string) {
@@ -112,6 +139,28 @@ function listLiveStreamsDb() {
     orderBy: { viewers: "desc" },
     include: { channel: { include: { creator: true } } },
   });
+}
+
+/**
+ * Drops tied to a SPECIFIC live stream (per-stream commerce). Falls back to the in-memory
+ * demo set when there's no DB. Empty result ⇒ caller uses channel products / category demo.
+ */
+export async function listStreamProducts(streamId: string) {
+  try {
+    const rows = await prisma.product.findMany({
+      where: { streamId, status: "live" },
+      orderBy: { createdAt: "desc" },
+    });
+    type DbRows = typeof rows;
+    if (rows.length) return rows;
+    return fxStreamProducts(streamId) as unknown as DbRows;
+  } catch {
+    return fxStreamProducts(streamId) as unknown as Awaited<ReturnType<typeof listStreamProductsDb>>;
+  }
+}
+
+function listStreamProductsDb() {
+  return prisma.product.findMany({ where: { status: "live" }, orderBy: { createdAt: "desc" } });
 }
 
 /** A single live stream by id (the live-watch page). No-DB safe (fixtures fallback). */

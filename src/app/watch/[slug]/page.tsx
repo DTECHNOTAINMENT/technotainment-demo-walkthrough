@@ -15,6 +15,7 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 import { formatNum } from "@/components/ui/primitives";
 import { video as videoProvider } from "@/lib/integrations";
 import { PublicShell } from "@/components/app/PublicShell";
+import { channelHref } from "@/lib/links";
 import { WatchActions } from "@/components/watch/WatchActions";
 import { WatchDescription } from "@/components/watch/WatchDescription";
 import { WatchTabs } from "@/components/watch/WatchTabs";
@@ -77,7 +78,7 @@ export default async function WatchPage({ params }: Props) {
     }),
     breadcrumb([
       { name: "home", path: "/" },
-      { name: creator.name, path: `/c/${creator.handle}` },
+      { name: creator.name, path: channelHref(creator.handle) },
       { name: video.title, path: `/watch/${video.slug}` },
     ]),
   ];
@@ -86,12 +87,13 @@ export default async function WatchPage({ params }: Props) {
 
   const products = channel?.products ?? [];
   const tiers = channel?.tiers ?? [];
-  const drop = buildDropCard(products, video.thumbUrl);
+  const commerceCtx = { category: creator.category, creatorCategory: creator.category, seed: video.id };
+  const drop = buildDropCard(products, commerceCtx);
   const upNext = buildUpNext(liveStreams, recent, video.slug, ago);
 
   const followers = creator.followers ?? 0;
   const metaLine = `${formatNum(video.views)} views · ${ago(video.publishedAt)}`;
-  const subsLine = `${formatNum(followers)} subscribers · ${formatNum(Math.max(1, Math.round(followers * 0.0012)))} joined this week`;
+  const subsLine = `${formatNum(followers)} followers · ${formatNum(Math.max(1, Math.round(followers * 0.0012)))} new this week`;
 
   return (
     <PublicShell>
@@ -181,8 +183,8 @@ export default async function WatchPage({ params }: Props) {
                 schedule: "new uploads weekly",
                 language: "english",
               }}
-              drops={buildDrops(products, video.thumbUrl)}
-              competitions={buildCompetitions()}
+              drops={buildDrops(products, commerceCtx)}
+              competitions={buildCompetitions(commerceCtx)}
               tiers={buildTiers(tiers)}
               giftedSubs={142}
             />

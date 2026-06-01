@@ -6,6 +6,7 @@
 import { canonical, appUrl } from "./meta";
 import { branding } from "@/lib/config";
 import { castToFiat } from "@/lib/cast";
+import { channelHref } from "@/lib/links";
 
 type Json = Record<string, unknown>;
 
@@ -25,7 +26,7 @@ export function person(creator: { name: string; handle: string; bio?: string | n
     name: creator.name,
     alternateName: creator.handle,
     description: creator.bio ?? undefined,
-    url: canonical(`/c/${creator.handle}`),
+    url: canonical(channelHref(creator.handle)),
   };
 }
 
@@ -103,7 +104,7 @@ export function broadcastEvent(s: {
     isLiveBroadcast: true,
     startDate: (s.startedAt ?? new Date()).toISOString(),
     about: s.category,
-    url: canonical(`/c/${s.channelHandle}`),
+    url: canonical(channelHref(s.channelHandle)),
     performer: { "@type": "Person", name: s.channel.creator.name },
   };
 }
@@ -125,7 +126,7 @@ export function product(p: {
       price: castToFiat(p.priceCast).toFixed(2),
       priceCurrency: "GBP",
       availability: "https://schema.org/InStock",
-      url: canonical(`/c/${p.channelHandle}`),
+      url: canonical(channelHref(p.channelHandle)),
     },
   };
 }

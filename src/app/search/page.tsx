@@ -9,6 +9,7 @@ import { VideoCard } from "@/components/public/cards";
 import { Avatar, formatNum } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
 import { PublicShell } from "@/components/app/PublicShell";
+import { channelHref } from "@/lib/links";
 
 export const dynamic = "force-dynamic";
 
@@ -102,7 +103,7 @@ export default async function SearchPage({ searchParams }: Props) {
             {results.channels.map((c) => (
               <Link
                 key={c.id}
-                href={`/c/${c.handle}`}
+                href={channelHref(c.handle)}
                 className="card"
                 style={{ display: "flex", alignItems: "center", gap: 14, padding: 16, textDecoration: "none", background: "var(--surface)" }}
               >

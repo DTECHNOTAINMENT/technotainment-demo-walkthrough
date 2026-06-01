@@ -4,7 +4,7 @@
 // live-drop card + chips + up-next list. Live streams link here (not the channel page).
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getStreamById, getChannelByHandle, listLiveStreams, listRecentVideos } from "@/lib/queries/public";
+import { getStreamById, getChannelByHandle, listLiveStreams, listRecentVideos, listStreamProducts } from "@/lib/queries/public";
 import { buildMetadata, ogImage } from "@/lib/seo/meta";
 import { broadcastEvent, breadcrumb } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
@@ -43,11 +43,12 @@ export default async function LiveWatchPage({ params }: Props) {
   const creator = stream.channel.creator;
   const poster = catImage(creator.category, `${stream.id}-live`, 1280, 720);
 
-  const [channel, liveStreams, recent, playback] = await Promise.all([
+  const [channel, liveStreams, recent, playback, streamProducts] = await Promise.all([
     getChannelByHandle(creator.handle).catch(() => null),
     listLiveStreams().catch(() => []),
     listRecentVideos(18).catch(() => []),
     videoProvider.getPlayback(stream.id),
+    listStreamProducts(stream.id).catch(() => []),
   ]);
 
   const jsonLd = [
@@ -65,14 +66,16 @@ export default async function LiveWatchPage({ params }: Props) {
     ]),
   ];
 
-  const products = channel?.products ?? [];
+  // Per-stream drops win; else this channel's catalogue; else a per-category demo (never a global fixture).
+  const products = streamProducts.length ? streamProducts : channel?.products ?? [];
   const tiers = channel?.tiers ?? [];
-  const drop = buildDropCard(products, poster);
+  const commerceCtx = { category: stream.category, creatorCategory: creator.category, seed: stream.id };
+  const drop = buildDropCard(products, commerceCtx);
   const upNext = buildUpNext(liveStreams, recent, "", () => "live now");
 
   const followers = creator.followers ?? 0;
   const metaLine = `${formatNum(stream.viewers)} watching · live now · #${stream.category.replace(/\s+/g, "")}`;
-  const subsLine = `${formatNum(followers)} subscribers · ${formatNum(Math.max(1, Math.round(followers * 0.0012)))} joined this week`;
+  const subsLine = `${formatNum(followers)} followers · ${formatNum(Math.max(1, Math.round(followers * 0.0012)))} new this week`;
 
   return (
     <PublicShell>
@@ -138,8 +141,8 @@ export default async function LiveWatchPage({ params }: Props) {
                 schedule: "live now · regular streams",
                 language: "english",
               }}
-              drops={buildDrops(products, poster)}
-              competitions={buildCompetitions()}
+              drops={buildDrops(products, commerceCtx)}
+              competitions={buildCompetitions(commerceCtx)}
               tiers={buildTiers(tiers)}
               giftedSubs={142}
             />

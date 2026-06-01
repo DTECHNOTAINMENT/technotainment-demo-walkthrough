@@ -615,6 +615,11 @@ async function main() {
           { id: "p-joon-ink", channelId: "ch-joon", kind: "drop", name: "ink drawing · sat 4-hour", priceCast: 320, edition: "1 of 1", imgUrl: "https://picsum.photos/seed/ink-sketch-large/640/360", status: "live", sold: 1, stock: 0 },
           { id: "p-ozan-build", channelId: "ch-ozan", kind: "course", name: "live build · cherry sideboard", priceCast: 1240, edition: "vod + sheets", imgUrl: "https://picsum.photos/seed/woodworking-tools/640/360", status: "live", sold: 340, stock: null },
           { id: "p-demo-pass", channelId: "ch-demo", kind: "ppv", name: "live show · annual pass", priceCast: 2400, edition: "12 months", imgUrl: "https://picsum.photos/seed/microphone-on-air/640/360", status: "live", sold: 5200, stock: null },
+          // Per-stream commerce (streamId): a drop tied to ONE live stream, so a valorant final
+          // sells esports gear and a non-league match sells a kit — never the other way round.
+          { id: "sp-saber-jersey", channelId: "ch-saber", streamId: "str-saber-1", kind: "drop", name: "valorant finals · team jersey", priceCast: 1400, edition: "312 / 500 sold", imgUrl: "https://picsum.photos/seed/esports-jersey/640/360", status: "live", sold: 312, stock: 188 },
+          { id: "sp-saber-skin", channelId: "ch-saber", streamId: "str-saber-1", kind: "drop", name: "limited weapon skin · finals drop", priceCast: 600, edition: "limited", imgUrl: "https://picsum.photos/seed/esports-skin/640/360", status: "live", sold: 904, stock: null },
+          { id: "sp-atlas-kit", channelId: "ch-atlas", streamId: "str-atlas-1", kind: "drop", name: "matchday retro third kit", priceCast: 1240, edition: "247 / 500 sold", imgUrl: "https://picsum.photos/seed/football-kit/640/360", status: "live", sold: 247, stock: 253 },
         ],
       });
 

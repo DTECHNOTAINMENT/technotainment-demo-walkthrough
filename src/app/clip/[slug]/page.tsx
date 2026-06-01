@@ -13,6 +13,7 @@ import { formatNum } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
 import { video as videoProvider } from "@/lib/integrations";
 import { PublicShell } from "@/components/app/PublicShell";
+import { channelHref } from "@/lib/links";
 import { WatchActions } from "@/components/watch/WatchActions";
 import { WatchDescription } from "@/components/watch/WatchDescription";
 import { WatchTabs } from "@/components/watch/WatchTabs";
@@ -74,7 +75,7 @@ export default async function ClipPage({ params }: Props) {
     }),
     breadcrumb([
       { name: "home", path: "/" },
-      { name: creator.name, path: `/c/${creator.handle}` },
+      { name: creator.name, path: channelHref(creator.handle) },
       { name: clip.title, path: `/clip/${clip.slug}` },
     ]),
   ];
@@ -83,7 +84,8 @@ export default async function ClipPage({ params }: Props) {
 
   const products = channel?.products ?? [];
   const tiers = channel?.tiers ?? [];
-  const drop = buildDropCard(products, clip.thumbUrl);
+  const commerceCtx = { category: creator.category, creatorCategory: creator.category, seed: clip.id };
+  const drop = buildDropCard(products, commerceCtx);
   const upNext = buildUpNext(liveStreams, recent, clip.slug, ago);
 
   const followers = creator.followers ?? 0;
@@ -181,8 +183,8 @@ export default async function ClipPage({ params }: Props) {
                 schedule: "new clips weekly",
                 language: "english",
               }}
-              drops={buildDrops(products, clip.thumbUrl)}
-              competitions={buildCompetitions()}
+              drops={buildDrops(products, commerceCtx)}
+              competitions={buildCompetitions(commerceCtx)}
               tiers={buildTiers(tiers)}
               giftedSubs={142}
             />

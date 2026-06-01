@@ -7,6 +7,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { listFollowing } from "@/lib/queries/viewer";
+import { channelHref } from "@/lib/links";
 import { Avatar, type CreatorLike } from "@/components/ui/primitives";
 import { PageHeader } from "@/components/viewer/shared";
 
@@ -108,7 +109,7 @@ export default async function NotificationsPage() {
               {g.items.map((it) => (
                 <Link
                   key={it.id}
-                  href={`/c/${it.handle.replace(/^@/, "")}`}
+                  href={channelHref(it.handle)}
                   style={{
                     width: "100%",
                     padding: "12px 18px",

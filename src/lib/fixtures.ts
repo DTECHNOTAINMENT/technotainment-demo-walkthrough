@@ -398,6 +398,40 @@ export function fxChannelByHandle(handle: string): FxChannel | null {
 }
 
 /**
+ * Demo drops tied to a SPECIFIC live stream (per-stream commerce). Each carries a streamId so a
+ * valorant final's drop differs from a non-league match's. Real DB rows take precedence; this is
+ * the no-DB fallback that proves the model is per-stream (not a single global fixture).
+ */
+const STREAM_PRODUCTS: (FxProduct & { streamId: string })[] = [
+  { id: "sp-saber-jersey", channelId: chId("saber"), streamId: "str-saber-1", kind: "drop", name: "valorant finals · team jersey", priceCast: 1400, edition: "312 / 500 sold", imgUrl: catImage("competitive esports", "sp-saber-jersey"), status: "live", sold: 312, stock: 188, createdAt: EPOCH },
+  { id: "sp-saber-skin", channelId: chId("saber"), streamId: "str-saber-1", kind: "drop", name: "limited weapon skin · finals drop", priceCast: 600, edition: "limited", imgUrl: catImage("competitive esports", "sp-saber-skin"), status: "live", sold: 904, stock: null, createdAt: EPOCH },
+  { id: "sp-atlas-kit", channelId: chId("atlas"), streamId: "str-atlas-1", kind: "drop", name: "matchday retro third kit", priceCast: 1240, edition: "247 / 500 sold", imgUrl: catImage("lower-league football", "sp-atlas-kit"), status: "live", sold: 247, stock: 253, createdAt: EPOCH },
+  { id: "sp-atlas-scarf", channelId: chId("atlas"), streamId: "str-atlas-1", kind: "merch", name: "matchday scarf · away red", priceCast: 400, edition: "limited", imgUrl: catImage("lower-league football", "sp-atlas-scarf"), status: "live", sold: 1820, stock: null, createdAt: EPOCH },
+];
+
+/** Drops for a specific stream (per-stream commerce) — no-DB fallback for listStreamProducts(). */
+export function fxStreamProducts(streamId: string): FxProduct[] {
+  return STREAM_PRODUCTS.filter((p) => p.streamId === streamId);
+}
+
+/** All live drops (channel + per-stream) with their seller handle — powers the /drops index. */
+export function fxAllProducts(): (FxProduct & { handle: string })[] {
+  const handleOf = (channelId: string): string => {
+    const cid = channelId.replace(/^ch-/, "");
+    return CREATORS.find((c) => c.id === cid)?.handle ?? "";
+  };
+  return [...PRODUCTS, ...STREAM_PRODUCTS]
+    .filter((p) => p.status === "live")
+    .map((p) => ({ ...p, handle: handleOf(p.channelId) }));
+}
+
+/** Full channel resolved by CREATOR id (legacy /c/<id> redirect support). */
+export function fxChannelByCreatorId(creatorId: string): FxChannel | null {
+  const creator = CREATORS.find((c) => c.id === creatorId);
+  return creator ? fxChannelByHandle(creator.handle) : null;
+}
+
+/**
  * Video by slug (with chapters + channel.creator) — matches getVideoBySlug().
  * Tolerant fallback: if the slug is unknown, return the first VOD so /watch still renders.
  */

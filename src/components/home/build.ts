@@ -79,9 +79,19 @@ export function heroFromStream(s: StreamRow): HeroData {
   };
 }
 
-/** Compose hero + tiles from live streams and recent videos. */
-export function buildHome(streams: StreamRow[], videos: VideoRow[]): { hero: HeroData | null; tiles: HomeTile[] } {
-  const hero = streams.length ? heroFromStream(streams[0]) : null;
+/**
+ * Compose hero + tiles from live streams and recent videos.
+ * The hero is the owner's pinned editorial stream (Admin → control center) when it's live;
+ * otherwise it falls back to the algorithmic top (most-viewed) live stream.
+ */
+export function buildHome(
+  streams: StreamRow[],
+  videos: VideoRow[],
+  pinnedStreamId?: string | null,
+): { hero: HeroData | null; tiles: HomeTile[] } {
+  const pinned = pinnedStreamId ? streams.find((s) => s.id === pinnedStreamId) : undefined;
+  const heroStream = pinned ?? streams[0];
+  const hero = heroStream ? heroFromStream(heroStream) : null;
   const liveTiles = streams.map(streamTile);
   const vodTiles = videos.map(videoTile);
   return { hero, tiles: [...liveTiles, ...vodTiles] };

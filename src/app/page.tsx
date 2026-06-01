@@ -1,6 +1,7 @@
 import { getCurrentSession } from "@/lib/session";
 import { balanceOf } from "@/lib/money";
 import { listLiveStreams, listRecentVideos } from "@/lib/queries/public";
+import { getHomeHero } from "@/lib/settings";
 import { Sidebar } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
 import { HomeView } from "@/components/home/HomeView";
@@ -14,13 +15,14 @@ export default async function PublicHome() {
   const session = await getCurrentSession();
   const anon = !session;
 
-  const [streams, videos, balance] = await Promise.all([
+  const [streams, videos, balance, homeHero] = await Promise.all([
     listLiveStreams().catch(() => []),
     listRecentVideos(18).catch(() => []),
     session ? balanceOf(session.userId).catch(() => 0) : Promise.resolve(null),
+    getHomeHero().catch(() => ({ pinnedStreamId: null })),
   ]);
 
-  const { hero, tiles } = buildHome(streams, videos);
+  const { hero, tiles } = buildHome(streams, videos, homeHero.pinnedStreamId);
 
   return (
     <div className="app-shell">

@@ -371,6 +371,7 @@ model Membership {
 model Product {
   id        String        @id
   channelId String
+  streamId  String? // optional: a drop tied to a SPECIFIC live stream (per-stream commerce)
   kind      ProductKind
   name      String
   priceCast Int
@@ -384,6 +385,7 @@ model Product {
   channel Channel @relation(fields: [channelId], references: [id])
 
   @@index([channelId])
+  @@index([streamId])
 }
 
 // =============================================================================
