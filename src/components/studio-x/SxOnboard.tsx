@@ -6,6 +6,7 @@
  * /api/studio/onboard, then routes to /studio on success.
  */
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatCast, formatFiat } from "@/lib/cast";
 import { SX_INPUT, SX_LABEL } from "./SxPrimitives";
@@ -141,12 +142,13 @@ export function SxOnboard({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span
+          <Link
+            href="/"
             className="lower"
-            style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.03em", color: "var(--ink-1)" }}
+            style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.03em", color: "var(--ink-1)", textDecoration: "none" }}
           >
             technotainment
-          </span>
+          </Link>
           <span
             className="lower"
             style={{
@@ -163,6 +165,26 @@ export function SxOnboard({
             become a creator
           </span>
         </div>
+
+        {/* always a way out of the flow */}
+        <Link
+          href="/"
+          className="lower"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 13,
+            fontWeight: 600,
+            color: "var(--ink-2)",
+            textDecoration: "none",
+            padding: "8px 14px",
+            borderRadius: 999,
+            border: "1px solid var(--hairline)",
+          }}
+        >
+          ← back to home
+        </Link>
       </div>
 
       {/* progress */}
