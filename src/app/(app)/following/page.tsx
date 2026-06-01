@@ -9,6 +9,8 @@ import { listFollowing } from "@/lib/queries/viewer";
 import { channelHref } from "@/lib/links";
 import { PageHeader } from "@/components/viewer/shared";
 import { Avatar, formatNum } from "@/components/ui/primitives";
+import { SmartImg } from "@/components/ui/SmartImg";
+import { catImage, reliableImage } from "@/lib/img";
 
 export const metadata: Metadata = { title: "following", robots: { index: false } };
 
@@ -46,6 +48,7 @@ export default async function FollowingPage() {
                         className="thumb"
                         style={{ position: "relative", background: `linear-gradient(120deg, ${ch.creator.brand}, ${ch.creator.brand2})` }}
                       >
+                        <SmartImg src={catImage(ch.creator.category, live.id)} fallback={reliableImage(live.id)} />
                         <div className="thumb-overlay" />
                         <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, alignItems: "center" }}>
                           <span className="live-pill">live</span>

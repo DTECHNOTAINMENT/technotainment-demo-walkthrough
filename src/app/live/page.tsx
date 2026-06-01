@@ -10,6 +10,8 @@ import { broadcastEvent } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { PageHeader } from "@/components/viewer/shared";
 import { Avatar, formatNum } from "@/components/ui/primitives";
+import { SmartImg } from "@/components/ui/SmartImg";
+import { catImage, reliableImage } from "@/lib/img";
 import { PublicShell } from "@/components/app/PublicShell";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +54,7 @@ export default async function LivePage() {
                     background: `linear-gradient(120deg, ${creator.brand}, ${creator.brand2})`,
                   }}
                 >
+                  <SmartImg src={catImage(creator.category, s.id)} fallback={reliableImage(s.id)} />
                   <div className="thumb-overlay" />
                   <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, alignItems: "center" }}>
                     <span className="live-pill">live</span>
