@@ -6,6 +6,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCast, formatFiat } from "@/lib/cast";
+import { reliableImage } from "@/lib/img";
+import { SmartImg } from "@/components/ui/SmartImg";
 
 export interface ChannelStoreProduct {
   id: string;
@@ -94,8 +96,9 @@ export function ChannelStore({ channelId, products }: { channelId: string; produ
             <div key={p.id} className="card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
               <div
                 className="thumb"
-                style={{ aspectRatio: "4 / 3", borderRadius: 0, backgroundImage: `url(${p.imgUrl})`, backgroundSize: "cover" }}
+                style={{ aspectRatio: "4 / 3", borderRadius: 0 }}
               >
+                <SmartImg src={p.imgUrl} fallback={reliableImage(p.id, 480, 360)} />
                 <div className="thumb-overlay" />
                 <span
                   style={{

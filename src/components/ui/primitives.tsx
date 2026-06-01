@@ -2,6 +2,8 @@
 // ViewerBadge, CastGlyph, formatNum). Server-safe; design-token styling only.
 import type { CSSProperties, ReactNode } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { SmartImg } from "@/components/ui/SmartImg";
+import { reliableImage } from "@/lib/img";
 
 export interface CreatorLike {
   name: string;
@@ -123,8 +125,9 @@ export function Thumb({
   return (
     <div
       className={`thumb ${src ? "" : gradClass}`}
-      style={{ backgroundImage: src ? `url(${src})` : undefined, ...style }}
+      style={style}
     >
+      {src && <SmartImg src={src} fallback={reliableImage(src)} />}
       {overlay && <div className="thumb-overlay" />}
       {children}
       {title && !src && <div className="thumb-title">{title}</div>}

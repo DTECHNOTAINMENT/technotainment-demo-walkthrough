@@ -7,6 +7,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
+import { SmartImg } from "@/components/ui/SmartImg";
+import { reliableImage } from "@/lib/img";
 import type { UpNextItem, WatchDrop } from "./types";
 
 function fmtViews(n: number): string {
@@ -52,14 +54,15 @@ export function WatchUpNext({
           </div>
           <div
             style={{
+              position: "relative",
               aspectRatio: "16/10",
               borderRadius: 10,
-              backgroundImage: `url(${drop.imgUrl})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
+              overflow: "hidden",
               marginBottom: 10,
             }}
-          />
+          >
+            <SmartImg src={drop.imgUrl} fallback={reliableImage(drop.name, 480, 300)} />
+          </div>
           <div style={{ fontSize: 13.5, fontWeight: 500, color: "var(--ink-1)" }}>{drop.name}</div>
           <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }} className="tnum">
             {drop.edition}
@@ -137,13 +140,11 @@ export function WatchUpNext({
                 height: 80,
                 borderRadius: 8,
                 overflow: "hidden",
-                backgroundImage: `url(${p.thumbUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
                 position: "relative",
                 flex: "0 0 140px",
               }}
             >
+              <SmartImg src={p.thumbUrl} fallback={reliableImage(p.id, 280, 160)} />
               <span
                 style={{
                   position: "absolute",

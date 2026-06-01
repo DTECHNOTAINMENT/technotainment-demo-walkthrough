@@ -5,8 +5,9 @@
 // The buy action links into the drops/search surface (no checkout wired here).
 import Link from "next/link";
 import { formatNum, type CreatorLike } from "@/components/ui/primitives";
-import { catImage } from "@/lib/img";
+import { catImage, reliableImage } from "@/lib/img";
 import { channelHref } from "@/lib/links";
+import { SmartImg } from "@/components/ui/SmartImg";
 
 interface Drop {
   id: string;
@@ -33,7 +34,8 @@ function DropTile({ d }: { d: Drop }) {
   return (
     <div className="tile" style={{ width: 220 }}>
       <Link href={href} style={{ display: "block" }}>
-        <div className="thumb" style={{ aspectRatio: "4 / 5", backgroundImage: `url(${catImage(d.category, d.id, 480, 600)})` }}>
+        <div className="thumb" style={{ aspectRatio: "4 / 5" }}>
+          <SmartImg src={catImage(d.category, d.id, 480, 600)} fallback={reliableImage(d.id, 480, 600)} />
           <div className="thumb-overlay" />
           <div style={{ position: "absolute", top: 10, left: 10 }}>
             <span
