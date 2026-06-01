@@ -9,6 +9,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { requireCreatorChannel } from "@/lib/studio";
+import { channelHref } from "@/lib/links";
 import { ThemeToggle } from "@/components/theme";
 import { StSidebar } from "@/components/studio/StSidebar";
 import { StMobileNav } from "@/components/studio/StMobileNav";
@@ -32,9 +33,7 @@ export default async function StudioLayout({ children }: { children: ReactNode }
   }
   if (!channelName) return <>{children}</>;
 
-  const channelHref = creatorHandle
-    ? `/c/${encodeURIComponent(creatorHandle.replace(/^@/, ""))}`
-    : "/home";
+  const channelUrl = creatorHandle ? channelHref(creatorHandle) : "/home";
 
   return (
     <div
@@ -90,7 +89,7 @@ export default async function StudioLayout({ children }: { children: ReactNode }
           <div style={{ flex: 1 }} />
 
           <Link
-            href={channelHref}
+            href={channelUrl}
             className="btn btn-glass lower sb-hide-mobile"
             style={{ padding: "9px 14px", fontSize: 13, textDecoration: "none" }}
           >

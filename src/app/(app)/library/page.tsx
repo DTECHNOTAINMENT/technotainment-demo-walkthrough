@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { library } from "@/lib/queries/viewer";
+import { channelHref } from "@/lib/links";
 import { listRecentVideos } from "@/lib/queries/public";
 import { formatCast } from "@/lib/cast";
 import { PageHeader } from "@/components/viewer/shared";
@@ -73,7 +74,7 @@ export default async function LibraryPage() {
                     <span style={{ display: "block", width: 40, height: 40, borderRadius: "50%", background: "var(--surface-2)" }} />
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <Link href={`/c/${m.channel.handle.replace(/^@/, "")}`} style={{ fontSize: 14, fontWeight: 700 }}>
+                    <Link href={channelHref(m.channel.handle)} style={{ fontSize: 14, fontWeight: 700 }}>
                       {m.channel.name}
                     </Link>
                     <div className="lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>

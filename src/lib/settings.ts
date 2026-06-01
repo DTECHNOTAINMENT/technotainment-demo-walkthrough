@@ -44,6 +44,32 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
 export async function getBranding(): Promise<Branding> {
   return (await getPlatformSettings()).branding;
 }
+
+export interface HomeHero {
+  /** The live stream pinned as the home hero. Null/empty ⇒ fall back to the top live stream. */
+  pinnedStreamId: string | null;
+}
+
+/** Default pinned hero = the spec hero (Atlas FC vs Northgate Reserves). */
+const homeHeroDefaults: HomeHero = { pinnedStreamId: "str-atlas-1" };
+
+/**
+ * Home hero config (Admin → control center, configure-don't-code). The owner pins an editorial
+ * hero; when nothing is pinned we fall back to the algorithmic top live stream. No-DB safe.
+ */
+export async function getHomeHero(): Promise<HomeHero> {
+  try {
+    const row = await prisma.setting.findUnique({ where: { key: "homeHero" } });
+    if (row) {
+      const v = (row.valueJson ?? {}) as Partial<HomeHero>;
+      const pinned = typeof v.pinnedStreamId === "string" ? v.pinnedStreamId.trim() : "";
+      return { pinnedStreamId: pinned || null };
+    }
+  } catch {
+    /* DB unavailable → seeded default */
+  }
+  return homeHeroDefaults;
+}
 export async function getFees(): Promise<Fees> {
   return (await getPlatformSettings()).fees;
 }

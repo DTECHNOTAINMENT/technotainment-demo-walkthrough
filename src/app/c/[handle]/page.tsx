@@ -5,8 +5,9 @@
 // generateMetadata, getChannelByHandle) is unchanged.
 import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { getChannelByHandle } from "@/lib/queries/public";
+import { notFound, permanentRedirect } from "next/navigation";
+import { getChannelByHandle, getChannelByCreatorId } from "@/lib/queries/public";
+import { channelHref } from "@/lib/links";
 import { buildMetadata, clampDescription } from "@/lib/seo/meta";
 import { person, breadcrumb, product } from "@/lib/seo/jsonld";
 import { JsonLd } from "@/components/JsonLd";
@@ -27,13 +28,24 @@ export const revalidate = 60;
 type Props = { params: { handle: string } };
 
 /** Decode the handle and resolve the channel, tolerating a missing leading "@". */
+// Canonical channel URL is the bare handle (/c/<handle>). Non-canonical forms 308-redirect:
+//   /c/@handle  -> /c/handle      (strip the @)
+//   /c/<id>     -> /c/<handle>    (legacy creator-id links)
 async function load(rawHandle: string) {
-  const decoded = decodeURIComponent(rawHandle);
-  let channel = await getChannelByHandle(decoded);
-  if (!channel && !decoded.startsWith("@")) {
-    channel = await getChannelByHandle(`@${decoded}`);
-  }
-  return channel;
+  const decoded = decodeURIComponent(rawHandle).trim();
+
+  // Any "@"-prefixed form is non-canonical.
+  if (decoded.startsWith("@")) permanentRedirect(channelHref(decoded));
+
+  // Handles are stored WITH "@"; the canonical segment is bare.
+  const channel = await getChannelByHandle(`@${decoded}`);
+  if (channel) return channel;
+
+  // Not a handle — maybe a legacy creator id → redirect to its canonical handle URL.
+  const byId = await getChannelByCreatorId(decoded);
+  if (byId) permanentRedirect(channelHref(byId.handle));
+
+  return null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -43,7 +55,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildMetadata({
     title: `${channel.name} (${handle})`,
     description: clampDescription(channel.bio ?? `${channel.name} on the platform — live streams, videos and drops.`),
-    path: `/c/${handle}`,
+    path: channelHref(handle),
     type: "profile",
   });
 }
@@ -63,7 +75,7 @@ export default async function ChannelPage({ params }: Props) {
     person(channel.creator),
     breadcrumb([
       { name: "home", path: "/" },
-      { name: channel.name, path: `/c/${handle}` },
+      { name: channel.name, path: channelHref(handle) },
     ]),
     ...channel.products.map((p) => product({ name: p.name, priceCast: p.priceCast, imgUrl: p.imgUrl, channelHandle: handle })),
   ];

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { listFollowing } from "@/lib/queries/viewer";
+import { channelHref } from "@/lib/links";
 import { PageHeader } from "@/components/viewer/shared";
 import { Avatar, formatNum } from "@/components/ui/primitives";
 
@@ -40,7 +41,7 @@ export default async function FollowingPage() {
                 {liveChannels.map((ch) => {
                   const live = ch.streams[0];
                   return (
-                    <Link key={ch.id} href={`/c/${ch.handle.replace(/^@/, "")}`} className="gtile tile" style={{ display: "block", textDecoration: "none" }}>
+                    <Link key={ch.id} href={channelHref(ch.handle)} className="gtile tile" style={{ display: "block", textDecoration: "none" }}>
                       <div
                         className="thumb"
                         style={{ position: "relative", background: `linear-gradient(120deg, ${ch.creator.brand}, ${ch.creator.brand2})` }}
@@ -78,7 +79,7 @@ export default async function FollowingPage() {
                 return (
                   <Link
                     key={ch.id}
-                    href={`/c/${ch.handle.replace(/^@/, "")}`}
+                    href={channelHref(ch.handle)}
                     className="card"
                     style={{ background: "var(--surface)", padding: 14, display: "flex", gap: 12, alignItems: "center", textDecoration: "none" }}
                   >

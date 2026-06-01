@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { homeFeed } from "@/lib/queries/viewer";
 import { listLiveStreams } from "@/lib/queries/public";
+import { getHomeHero } from "@/lib/settings";
 import { HomeView } from "@/components/home/HomeView";
 import { buildHome } from "@/components/home/build";
 
@@ -13,11 +14,12 @@ export default async function HomePage() {
   const session = await getCurrentSession();
   if (!session) redirect("/sign-in?next=/home");
 
-  const [streams, videos] = await Promise.all([
+  const [streams, videos, homeHero] = await Promise.all([
     listLiveStreams().catch(() => []),
     homeFeed(session.userId).catch(() => []),
+    getHomeHero().catch(() => ({ pinnedStreamId: null })),
   ]);
 
-  const { hero, tiles } = buildHome(streams, videos);
+  const { hero, tiles } = buildHome(streams, videos, homeHero.pinnedStreamId);
   return <HomeView hero={hero} tiles={tiles} />;
 }

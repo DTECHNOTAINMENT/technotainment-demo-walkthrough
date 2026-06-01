@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { formatNum, type CreatorLike } from "@/components/ui/primitives";
 import { catImage } from "@/lib/img";
+import { channelHref } from "@/lib/links";
 
 interface Drop {
   id: string;
@@ -17,20 +18,21 @@ interface Drop {
   creator: CreatorLike;
 }
 
+// Real creator handles (match src/lib/fixtures.ts) so each drop links to the right channel.
 const DROPS: Drop[] = [
-  { id: "D1", name: "small bowl · kiln drop 048", edition: "62 / 150", price: 180, category: "ceramics", handle: "@marlowe", creator: { name: "Marlowe Reed", handle: "@marlowe", brand: "#f59e0b", brand2: "#ef4444" } },
-  { id: "D2", name: "kavi's house apron", edition: "ships worldwide", price: 240, category: "live cooking", handle: "@kavi", creator: { name: "Kavi Anand", handle: "@kavi", brand: "#10b981", brand2: "#22c55e" } },
-  { id: "D3", name: "field recordings · vol 4", edition: "98 / 200", price: 120, category: "modular synth", handle: "@nyx", creator: { name: "Nyx Okafor", handle: "@nyx", brand: "#8b5cf6", brand2: "#ec4899" } },
-  { id: "D4", name: "ink drawing · sat 4-hour", edition: "1 of 1", price: 320, category: "illustration", handle: "@joon", creator: { name: "Joon Park", handle: "@joon", brand: "#06b6d4", brand2: "#3b82f6" } },
-  { id: "D5", name: "rooftop · live mix · 96k flac", edition: "rentable", price: 80, category: "afro-fusion dj", handle: "@kola", creator: { name: "Kola Diallo", handle: "@kola", brand: "#f43f5e", brand2: "#f59e0b" } },
-  { id: "D6", name: "frame-by-frame · tre flip course", edition: "self-paced", price: 480, category: "street skate", handle: "@ines", creator: { name: "Inés Vidal", handle: "@ines", brand: "#3b82f6", brand2: "#8b5cf6" } },
+  { id: "D1", name: "small bowl · kiln drop 048", edition: "62 / 150", price: 180, category: "ceramics", handle: "@marlowestudio", creator: { name: "Margot Marlowe", handle: "@marlowestudio", brand: "#0f766e", brand2: "#22d3ee" } },
+  { id: "D2", name: "kavi's house apron", edition: "ships worldwide", price: 240, category: "live cooking", handle: "@kavikitchen", creator: { name: "Kavi Rao", handle: "@kavikitchen", brand: "#dc2626", brand2: "#f97316" } },
+  { id: "D3", name: "field recordings · vol 4", edition: "98 / 200", price: 120, category: "modular synth", handle: "@nyxsynth", creator: { name: "Nyx Okafor", handle: "@nyxsynth", brand: "#7c3aed", brand2: "#ec4899" } },
+  { id: "D4", name: "ink drawing · sat 4-hour", edition: "1 of 1", price: 320, category: "illustration", handle: "@joondraws", creator: { name: "Joon Park", handle: "@joondraws", brand: "#9333ea", brand2: "#6366f1" } },
+  { id: "D5", name: "rooftop · live mix · 96k flac", edition: "rentable", price: 80, category: "afro-fusion dj", handle: "@kolasounds", creator: { name: "Kola Adebayo", handle: "@kolasounds", brand: "#be185d", brand2: "#7c3aed" } },
+  { id: "D6", name: "frame-by-frame · tre flip course", edition: "self-paced", price: 480, category: "street skate", handle: "@inesskates", creator: { name: "Inés Vidal", handle: "@inesskates", brand: "#be123c", brand2: "#fb7185" } },
 ];
 
 function DropTile({ d }: { d: Drop }) {
-  const channelHref = `/c/${d.handle.replace(/^@/, "")}`;
+  const href = channelHref(d.handle);
   return (
     <div className="tile" style={{ width: 220 }}>
-      <Link href={channelHref} style={{ display: "block" }}>
+      <Link href={href} style={{ display: "block" }}>
         <div className="thumb" style={{ aspectRatio: "4 / 5", backgroundImage: `url(${catImage(d.category, d.id, 480, 600)})` }}>
           <div className="thumb-overlay" />
           <div style={{ position: "absolute", top: 10, left: 10 }}>
@@ -51,7 +53,7 @@ function DropTile({ d }: { d: Drop }) {
           <span className="tnum" style={{ fontSize: 17, fontWeight: 800, color: "var(--ink-1)" }}>{formatNum(d.price)}</span>
           <span className="lower" style={{ fontSize: 11, color: "var(--ink-3)" }}>CAST</span>
         </div>
-        <Link href={channelHref} className="btn btn-grad lower" style={{ padding: "7px 12px", fontSize: 11 }}>
+        <Link href={href} className="btn btn-grad lower" style={{ padding: "7px 12px", fontSize: 11 }}>
           buy
         </Link>
       </div>
@@ -64,7 +66,7 @@ export function DropsRail() {
     <section style={{ marginTop: 32 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
         <div className="lower" style={{ fontWeight: 800, fontSize: 18 }}>drops</div>
-        <Link href="/search?q=drops" className="lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>
+        <Link href="/drops" className="lower" style={{ fontSize: 12, color: "var(--ink-3)" }}>
           see all &rarr;
         </Link>
       </div>

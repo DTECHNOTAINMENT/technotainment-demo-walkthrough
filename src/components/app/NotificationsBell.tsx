@@ -9,6 +9,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Avatar, type CreatorLike } from "@/components/ui/primitives";
+import { channelHref } from "@/lib/links";
 
 interface NItem {
   id: string;
@@ -111,7 +112,7 @@ export function NotificationsBell() {
                   {g.items.map((it) => (
                     <Link
                       key={it.id}
-                      href={`/c/${it.handle.replace(/^@/, "")}`}
+                      href={channelHref(it.handle)}
                       onClick={() => setOpen(false)}
                       style={{
                         width: "100%",

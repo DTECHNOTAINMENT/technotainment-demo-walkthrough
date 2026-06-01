@@ -3,6 +3,7 @@ import { ThemeScript } from "@/components/theme";
 import { CookieConsent } from "@/components/CookieConsent";
 import { MobileNav } from "@/components/app/MobileNav";
 import { getBranding } from "@/lib/settings";
+import { appUrl } from "@/lib/seo/meta";
 import "./globals.css";
 
 // Branding is read from the DB (Admin → control center) at runtime — a rename/recolour needs no
@@ -18,6 +19,8 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getBranding();
   return {
+    // Resolves every relative canonical/OG/Twitter URL against the real origin (never localhost).
+    metadataBase: new URL(appUrl()),
     title: { default: `${branding.appName} — ${branding.companyName}`, template: `%s · ${branding.appName}` },
     description: `${branding.companyName}: ${branding.tagline}. Live-streaming + VOD powered by ${branding.currencyName}.`,
     applicationName: branding.appName,

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { Avatar, type CreatorLike } from "@/components/ui/primitives";
+import { channelHref } from "@/lib/links";
 
 export interface SidebarCreator extends CreatorLike {
   id: string;
@@ -115,7 +116,7 @@ export function Sidebar({
           <div className="sb-section">following · {following.length}</div>
           <div>
             {visible.map((c) => (
-              <Link key={c.id} href={`/c/${c.handle.replace(/^@/, "")}`} className="sb-creator">
+              <Link key={c.id} href={channelHref(c.handle)} className="sb-creator">
                 <Avatar creator={c} size={30} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="sb-handle">{c.handle}</div>

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/Icon";
 import { SupportBar } from "@/components/SupportBar";
+import { channelHref } from "@/lib/links";
 import type { WatchCreator } from "./types";
 
 const VerifiedCheck = () => (
@@ -29,6 +30,7 @@ export function WatchActions({
   channelId: string;
   subsLine: string;
 }) {
+  const [following, setFollowing] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -66,7 +68,7 @@ export function WatchActions({
       >
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <Link
-            href={`/c/${creator.handle}`}
+            href={channelHref(creator.handle)}
             style={{ display: "flex", gap: 10, alignItems: "center", textAlign: "left", textDecoration: "none" }}
           >
             <Avatar creator={creator} size={40} />
@@ -89,25 +91,51 @@ export function WatchActions({
               </div>
             </div>
           </Link>
+          {/* FREE follow (no CAST) — the model field is `followers`. Distinct from paid membership. */}
           <button
             onClick={() => {
-              setSubscribed((s) => !s);
-              flash(subscribed ? "unsubscribed" : `subscribed · ${creator.handle}`);
+              setFollowing((f) => !f);
+              flash(following ? "unfollowed" : `following · ${creator.handle}`);
             }}
             style={{
-              padding: "9px 18px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              padding: "9px 16px",
               fontSize: 14,
               fontWeight: 600,
               borderRadius: 999,
-              background: subscribed ? "var(--surface-2)" : "var(--ink-1)",
-              color: subscribed ? "var(--ink-1)" : "var(--bg)",
+              background: following ? "var(--surface-2)" : "var(--ink-1)",
+              color: following ? "var(--ink-1)" : "var(--bg)",
               border: "none",
               height: 36,
               cursor: "pointer",
             }}
             className="lower"
           >
-            {subscribed ? "subscribed" : "subscribe"}
+            <Icon name="heart" size={14} stroke={2.4} fill={following ? "currentColor" : "none"} />
+            {following ? "following" : "follow"}
+          </button>
+          {/* PAID membership — subscribe with CAST (members/subscribers, not followers). */}
+          <button
+            onClick={() => {
+              setSubscribed((s) => !s);
+              flash(subscribed ? "membership cancelled" : `subscribed · member of ${creator.handle}`);
+            }}
+            style={{
+              padding: "9px 18px",
+              fontSize: 14,
+              fontWeight: 600,
+              borderRadius: 999,
+              background: subscribed ? "var(--surface-2)" : "transparent",
+              color: "var(--ink-1)",
+              border: "1.5px solid var(--hairline)",
+              height: 36,
+              cursor: "pointer",
+            }}
+            className="lower"
+          >
+            {subscribed ? "member" : "subscribe"}
           </button>
         </div>
 

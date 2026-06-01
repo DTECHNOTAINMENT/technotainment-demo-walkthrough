@@ -6,6 +6,7 @@
  */
 import type { MetadataRoute } from "next";
 import { canonical } from "@/lib/seo/meta";
+import { channelHref } from "@/lib/links";
 import {
   sitemapChannels,
   sitemapVideos,
@@ -29,7 +30,7 @@ export default async function sitemap({
       case "creators": {
         const channels = await sitemapChannels();
         return channels.map((c) => ({
-          url: canonical(`/c/${c.handle}`),
+          url: canonical(channelHref(c.handle)),
           lastModified: c.createdAt,
           changeFrequency: "daily",
           priority: 0.8,

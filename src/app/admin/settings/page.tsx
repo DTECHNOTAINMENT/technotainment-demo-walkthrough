@@ -8,6 +8,8 @@
  */
 import { listFlags, listTeam, listAudit } from "@/lib/queries/admin";
 import { getSetting } from "@/lib/admin";
+import { getHomeHero } from "@/lib/settings";
+import { listLiveStreams } from "@/lib/queries/public";
 import { branding, economy } from "@/lib/config";
 import { StudioCard, StudioPageHead, Pill, type PillTone } from "@/components/studio-ui";
 import { Icon } from "@/components/ui/Icon";
@@ -128,7 +130,7 @@ const DEFAULT_PAGES: PagesValue = {
 const DEFAULT_ANNOUNCEMENT: AnnouncementValue = { on: false, text: "" };
 
 export default async function AdminSettingsPage() {
-  const [flags, team, audit, brand, fees, payMethods, policies, pages, announcement, brandTheme] = await Promise.all([
+  const [flags, team, audit, brand, fees, payMethods, policies, pages, announcement, brandTheme, homeHero, liveStreams] = await Promise.all([
     listFlags(),
     listTeam(),
     listAudit(),
@@ -152,7 +154,13 @@ export default async function AdminSettingsPage() {
       brandColor2: "#ec4899",
       defaultTheme: branding.defaultTheme,
     }),
+    getHomeHero(),
+    listLiveStreams().catch(() => []),
   ]);
+
+  const heroOptions = liveStreams
+    .map((s) => `${s.id} — ${s.title} (${s.channel.creator.handle})`)
+    .join(" · ");
 
   const liveFlags = flags.filter((f) => (f.group || "live") === "live");
   const roadmapFlags = flags.filter((f) => f.group === "roadmap");
@@ -173,6 +181,19 @@ export default async function AdminSettingsPage() {
 
         {/* branding — logo, colours, default theme */}
         <AxBrandingExtras initial={brandTheme} />
+
+        {/* home hero — pinned editorial slot */}
+        <StudioCard title="home hero" sub="pin the live stream that headlines the home page">
+          <AxSetting
+            settingKey="homeHero"
+            fields={[{ name: "pinnedStreamId", label: "pinned stream id", hint: "leave blank to auto-pick the top live stream" }]}
+            initial={{ pinnedStreamId: homeHero.pinnedStreamId ?? "" }}
+            saveLabel="pin hero"
+          />
+          <div className="st-hint" style={{ marginTop: 14 }}>
+            live now: {heroOptions || "—"}
+          </div>
+        </StudioCard>
 
         {/* fees & CAST economy */}
         <StudioCard title="fees & CAST economy" sub="the platform credit and the cut technotainment takes">
