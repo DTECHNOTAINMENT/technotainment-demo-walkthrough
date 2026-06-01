@@ -131,14 +131,18 @@ export function SxOnboard({
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-      {/* top bar */}
+      {/* top bar — sticky so "back to home" stays reachable on every step (mobile has no bottom nav here) */}
       <div
         style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           padding: "16px 22px",
           borderBottom: "1px solid var(--hairline)",
+          background: "var(--bg)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
